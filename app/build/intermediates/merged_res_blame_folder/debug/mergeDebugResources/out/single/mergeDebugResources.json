@@ -1,0 +1,42 @@
+[
+    {
+        "merged": "C:\\Users\\danad\\.gradle\\daemon\\9.0.0\\com.resell.app-debug-63:\\mipmap-anydpi-v26_ic_launcher_round.xml.flat",
+        "source": "C:\\Users\\danad\\.gradle\\daemon\\9.0.0\\com.resell.app-main-65:\\mipmap-anydpi-v26\\ic_launcher_round.xml"
+    },
+    {
+        "merged": "C:\\Users\\danad\\.gradle\\daemon\\9.0.0\\com.resell.app-debug-63:\\drawable_ic_launcher_foreground.xml.flat",
+        "source": "C:\\Users\\danad\\.gradle\\daemon\\9.0.0\\com.resell.app-main-65:\\drawable\\ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "com.resell.app-debug-63:/drawable_splash_screen.xml.flat",
+        "source": "com.resell.app-main-65:/drawable/splash_screen.xml"
+    },
+    {
+        "merged": "C:\\Users\\danad\\.gradle\\daemon\\9.0.0\\com.resell.app-debug-63:\\xml_backup_rules.xml.flat",
+        "source": "C:\\Users\\danad\\.gradle\\daemon\\9.0.0\\com.resell.app-main-65:\\xml\\backup_rules.xml"
+    },
+    {
+        "merged": "C:\\Users\\danad\\.gradle\\daemon\\9.0.0\\com.resell.app-debug-63:\\mipmap-anydpi-v26_ic_launcher.xml.flat",
+        "source": "C:\\Users\\danad\\.gradle\\daemon\\9.0.0\\com.resell.app-main-65:\\mipmap-anydpi-v26\\ic_launcher.xml"
+    },
+    {
+        "merged": "C:\\Users\\danad\\.gradle\\daemon\\9.0.0\\com.resell.app-debug-63:\\xml_data_extraction_rules.xml.flat",
+        "source": "C:\\Users\\danad\\.gradle\\daemon\\9.0.0\\com.resell.app-main-65:\\xml\\data_extraction_rules.xml"
+    },
+    {
+        "merged": "com.resell.app-debug-63:/drawable-nodpi_splash_photo.jpg.flat",
+        "source": "com.resell.app-main-65:/drawable-nodpi/splash_photo.jpg"
+    },
+    {
+        "merged": "com.resell.app-debug-63:/drawable_ic_launcher_foreground.xml.flat",
+        "source": "com.resell.app-main-65:/drawable/ic_launcher_foreground.xml"
+    },
+    {
+        "merged": "C:\\Users\\danad\\.gradle\\daemon\\9.0.0\\com.resell.app-debug-63:\\drawable_ic_launcher_background.xml.flat",
+        "source": "C:\\Users\\danad\\.gradle\\daemon\\9.0.0\\com.resell.app-main-65:\\drawable\\ic_launcher_background.xml"
+    },
+    {
+        "merged": "com.resell.app-debug-63:/drawable_ic_lemon.png.flat",
+        "source": "com.resell.app-main-65:/drawable/ic_lemon.png"
+    }
+]
