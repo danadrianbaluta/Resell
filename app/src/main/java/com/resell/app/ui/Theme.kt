@@ -10,12 +10,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 val BrandBlue = Color(0xFF3665F3)
-val BrandPurple = Color(0xFF7C3AED)
+val BrandPurple = Color(0xFFD8037D)
+val BrandMedium = Color(0xFFFBB8CF)
+val BrandLight = Color(0xFFFFEAF9)
 val BrandOrange = Color(0xFFFF6A00)
 val BrandGreen = Color(0xFF12805C)
 val Ink = Color(0xFF111827)
 val MutedInk = Color(0xFF5B6472)
-val AppBackground = Color(0xFFF5F7FB)
+val AppBackground = BrandLight
 val CardBorder = Color(0xFFD8E0EC)
 val SoftSurface = Color(0xFFF0F4FA)
 

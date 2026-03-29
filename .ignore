@@ -16,6 +16,7 @@ build/
 *.jks
 *.keystore
 *.pem
+keystore.properties
 
 # Logs
 *.log

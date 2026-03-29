@@ -28,11 +28,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.resell.app.data.AppScreen
+import com.resell.app.data.formatDateForDisplay
 import com.resell.app.data.PlatformType
 import com.resell.app.data.Product
 import com.resell.app.data.hasActivityBetween
@@ -65,8 +65,8 @@ fun SummaryScreen(
     onSelectScreen: (AppScreen) -> Unit
 ) {
     val today = remember { LocalDate.now() }
-    var startDate by rememberSaveable { mutableStateOf(today.withDayOfMonth(1).toString()) }
-    var endDate by rememberSaveable { mutableStateOf(today.toString()) }
+    var startDate by rememberSaveable { mutableStateOf(formatDateForDisplay(today.withDayOfMonth(1))) }
+    var endDate by rememberSaveable { mutableStateOf(formatDateForDisplay(today)) }
     var selectedYear by rememberSaveable { mutableIntStateOf(today.year) }
     var selectedMonth by rememberSaveable { mutableIntStateOf(today.monthValue) }
     var yearExpanded by remember { mutableStateOf(false) }
@@ -111,20 +111,17 @@ fun SummaryScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(
-                            brush = Brush.linearGradient(listOf(Color(0xFFEEF4FF), Color(0xFFEFFFF8))),
-                            shape = RoundedCornerShape(24.dp)
-                        )
+                        .background(Color.White, RoundedCornerShape(22.dp))
                         .padding(16.dp)
                 ) {
                     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                        Text("Reporting window", style = MaterialTheme.typography.titleMedium)
+                        Text("Select dates", style = MaterialTheme.typography.titleMedium)
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            DateField("Start date", startDate, modifier = Modifier.weight(1f)) { startDate = it }
-                            DateField("End date", endDate, modifier = Modifier.weight(1f)) { endDate = it }
+                            DateField("Start date", startDate, showBorder = true, modifier = Modifier.weight(1f)) { startDate = it }
+                            DateField("End date", endDate, showBorder = true, modifier = Modifier.weight(1f)) { endDate = it }
                         }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -150,8 +147,12 @@ fun SummaryScreen(
                                                 selectedYear = year
                                                 yearExpanded = false
                                                 val range = YearMonth.of(selectedYear, selectedMonth)
-                                                startDate = range.atDay(1).toString()
-                                                endDate = if (selectedYear == today.year && selectedMonth == today.monthValue) today.toString() else range.atEndOfMonth().toString()
+                                                startDate = formatDateForDisplay(range.atDay(1))
+                                                endDate = if (selectedYear == today.year && selectedMonth == today.monthValue) {
+                                                    formatDateForDisplay(today)
+                                                } else {
+                                                    formatDateForDisplay(range.atEndOfMonth())
+                                                }
                                             }
                                         )
                                     }
@@ -189,8 +190,12 @@ fun SummaryScreen(
                                                 selectedMonth = month
                                                 monthExpanded = false
                                                 val range = YearMonth.of(selectedYear, selectedMonth)
-                                                startDate = range.atDay(1).toString()
-                                                endDate = if (selectedYear == today.year && selectedMonth == today.monthValue) today.toString() else range.atEndOfMonth().toString()
+                                                startDate = formatDateForDisplay(range.atDay(1))
+                                                endDate = if (selectedYear == today.year && selectedMonth == today.monthValue) {
+                                                    formatDateForDisplay(today)
+                                                } else {
+                                                    formatDateForDisplay(range.atEndOfMonth())
+                                                }
                                             }
                                         )
                                     }
@@ -201,8 +206,8 @@ fun SummaryScreen(
                                 onClick = {
                                     selectedYear = today.year
                                     selectedMonth = today.monthValue
-                                    startDate = LocalDate.of(2026, 1, 1).toString()
-                                    endDate = today.toString()
+                                    startDate = formatDateForDisplay(LocalDate.of(2026, 1, 1))
+                                    endDate = formatDateForDisplay(today)
                                 },
                                 shape = RoundedCornerShape(14.dp),
                                 colors = ButtonDefaults.filledTonalButtonColors(

@@ -6,14 +6,17 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -34,6 +37,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,6 +58,11 @@ import com.resell.app.data.Product
 import com.resell.app.data.ProductFilter
 import com.resell.app.data.matchesFilter
 import com.resell.app.data.summaryLabel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import java.net.HttpURLConnection
+import java.net.URL
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,17 +74,36 @@ fun MainScreen(
 ) {
     var filter by rememberSaveable { mutableStateOf(ProductFilter.LISTED) }
     var filterExpanded by remember { mutableStateOf(false) }
+    var quoteText by remember { mutableStateOf("Loading quote of the day...") }
+    var quoteAuthor by remember { mutableStateOf("") }
     val filteredProducts = products.filter { it.matchesFilter(filter) }
+
+    LaunchedEffect(Unit) {
+        val quote = fetchQuoteOfTheDay()
+        if (quote != null) {
+            quoteText = quote.first
+            quoteAuthor = quote.second
+        } else {
+            quoteText = "Keep listings, purchases, and sales in one place with fast status visibility."
+            quoteAuthor = ""
+        }
+    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = onAdd,
-                containerColor = BrandPurple,
-                contentColor = Color.White
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.End
             ) {
-                Icon(Icons.Rounded.Add, contentDescription = "Add product")
+                FloatingActionButton(
+                    onClick = onAdd,
+                    containerColor = BrandPurple,
+                    contentColor = Color.White
+                ) {
+                    Icon(Icons.Rounded.Add, contentDescription = "Add product")
+                }
+                Spacer(modifier = Modifier.windowInsetsBottomHeight(WindowInsets.navigationBars))
             }
         }
     ) { innerPadding ->
@@ -133,19 +161,23 @@ fun MainScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(
-                        brush = Brush.linearGradient(listOf(Color(0xFFEEF4FF), Color(0xFFFFF3EA))),
-                        shape = RoundedCornerShape(24.dp)
-                    )
+                    .background(Color(0xFFAAC2D0), RoundedCornerShape(24.dp))
                     .padding(16.dp)
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Track inventory like a PRO!!", style = MaterialTheme.typography.titleMedium)
+                    Text("Quote of the day", style = MaterialTheme.typography.titleMedium, color = Ink)
                     Text(
-                        "Keep listings, purchases, and sales in one place with fast status visibility.",
+                        quoteText,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MutedInk
+                        color = Ink
                     )
+                    if (quoteAuthor.isNotBlank()) {
+                        Text(
+                            quoteAuthor,
+                            style = MaterialTheme.typography.labelMedium,
+                            color = Ink
+                        )
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(10.dp))
@@ -163,6 +195,23 @@ fun MainScreen(
     }
 }
 
+private suspend fun fetchQuoteOfTheDay(): Pair<String, String>? = withContext(Dispatchers.IO) {
+    runCatching {
+        val connection = (URL("https://zenquotes.io/api/today").openConnection() as HttpURLConnection).apply {
+            requestMethod = "GET"
+            connectTimeout = 5000
+            readTimeout = 5000
+        }
+        connection.inputStream.bufferedReader().use { reader ->
+            val response = reader.readText()
+            val item = JSONArray(response).getJSONObject(0)
+            val quote = item.optString("q").trim()
+            val author = item.optString("a").trim()
+            quote to if (author.isBlank()) "" else " - $author"
+        }
+    }.getOrNull()
+}
+
 @Composable
 private fun ProductCard(product: Product, onClick: () -> Unit) {
     val listedPlatforms = product.platforms
@@ -176,7 +225,6 @@ private fun ProductCard(product: Product, onClick: () -> Unit) {
             .aspectRatio(0.92f)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
-        border = BorderStroke(1.dp, CardBorder),
         elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White)
     ) {
@@ -184,7 +232,7 @@ private fun ProductCard(product: Product, onClick: () -> Unit) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(2f)
+                    .weight(1.55f)
                     .background(Brush.linearGradient(listOf(Color(0xFFF5F7FB), Color(0xFFE8EEF9)))),
                 contentAlignment = Alignment.Center
             ) {
@@ -220,7 +268,7 @@ private fun ProductCard(product: Product, onClick: () -> Unit) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(1f)
+                    .weight(1.15f)
                     .padding(12.dp),
                 verticalArrangement = Arrangement.SpaceBetween
             ) {

@@ -1,14 +1,18 @@
 package com.resell.app.ui
 
+import android.app.Activity
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
+import android.os.Environment
+import android.provider.DocumentsContract
+import android.provider.MediaStore
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
@@ -89,8 +93,9 @@ fun DetailsScreen(
     val hasChanges = draft != original
     val scope = rememberCoroutineScope()
 
-    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        if (uri != null) {
+    val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val uri = result.data?.data
+        if (result.resultCode == Activity.RESULT_OK && uri != null) {
             scope.launch {
                 val importedUri = importImageToAppStorage(context, uri, draft.id)
                 if (importedUri != null) draft = draft.copy(imageUri = importedUri)
@@ -159,7 +164,7 @@ fun DetailsScreen(
 
             SectionCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Text("Core details", style = MaterialTheme.typography.titleMedium)
+                    Text("Details", style = MaterialTheme.typography.titleMedium)
                     OutlinedTextField(
                         value = draft.description,
                         onValueChange = { draft = draft.copy(description = it) },
@@ -178,9 +183,9 @@ fun DetailsScreen(
                                 .aspectRatio(1f)
                                 .clip(RoundedCornerShape(18.dp))
                                 .background(Color.White)
-                                .clickable { imagePicker.launch("image/*") }
-                                .border(1.dp, CardBorder, RoundedCornerShape(18.dp)),
-                            contentAlignment = Alignment.Center
+                                .clickable { imagePicker.launch(createImagePickerIntent()) }
+                                ,
+                                contentAlignment = Alignment.Center
                         ) {
                             if (draft.imageUri.isNotBlank()) {
                                 AsyncImage(
@@ -338,6 +343,24 @@ fun DetailsScreen(
     }
 }
 
+private fun createImagePickerIntent(): Intent {
+    val picturesUri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+    } else {
+        MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+    }
+
+    return Intent(Intent.ACTION_PICK, picturesUri).apply {
+        type = "image/*"
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        putExtra(DocumentsContract.EXTRA_INITIAL_URI, picturesUri)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val picturesDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+            putExtra(DocumentsContract.EXTRA_INITIAL_URI, Uri.fromFile(picturesDir))
+        }
+    }
+}
+
 private suspend fun importImageToAppStorage(
     context: android.content.Context,
     sourceUri: Uri,
@@ -388,7 +411,6 @@ private fun PlatformSection(
             .fillMaxWidth()
             .alpha(if (enabled) 1f else 0.45f),
         shape = RoundedCornerShape(18.dp),
-        border = BorderStroke(1.dp, CardBorder),
         colors = CardDefaults.outlinedCardColors(containerColor = Color.White)
     ) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {

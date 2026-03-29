@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.resell.app-mergeDebugResources-61:/values-si/values-si.xml",
+            "outputFile": "com.resell.app-mergeDebugResources-68:/values-si/values-si.xml",
             "map": [
                 {
                     "source": "C:\\Users\\danad\\.gradle\\caches\\9.0.0\\transforms\\b675e550b0e89e54ba4c716cfdf37c85\\transformed\\core-1.13.1\\res\\values-si\\values-si.xml",

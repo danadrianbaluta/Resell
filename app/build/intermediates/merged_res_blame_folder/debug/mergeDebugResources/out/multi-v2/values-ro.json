@@ -1,7 +1,7 @@
 {
     "logs": [
         {
-            "outputFile": "com.resell.app-mergeDebugResources-61:/values-ro/values-ro.xml",
+            "outputFile": "com.resell.app-mergeDebugResources-68:/values-ro/values-ro.xml",
             "map": [
                 {
                     "source": "C:\\Users\\danad\\.gradle\\caches\\9.0.0\\transforms\\6bde208890495654ef4aeae4e0228d51\\transformed\\ui-release\\res\\values-ro\\values-ro.xml",

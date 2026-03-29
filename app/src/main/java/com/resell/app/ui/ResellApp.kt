@@ -71,5 +71,10 @@ fun ResellApp(repository: ProductRepository) {
             products = products,
             onSelectScreen = { screen -> navigateTo(screen) }
         )
+
+        AppScreen.SETTINGS -> SettingsScreen(
+            repository = repository,
+            onSelectScreen = { screen -> navigateTo(screen) }
+        )
     }
 }
