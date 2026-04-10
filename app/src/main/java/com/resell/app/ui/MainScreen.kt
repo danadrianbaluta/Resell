@@ -54,6 +54,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.resell.app.data.AppScreen
+import com.resell.app.data.parseDateOrNull
 import com.resell.app.data.Product
 import com.resell.app.data.ProductFilter
 import com.resell.app.data.matchesFilter
@@ -76,7 +77,9 @@ fun MainScreen(
     var filterExpanded by remember { mutableStateOf(false) }
     var quoteText by remember { mutableStateOf("Loading quote of the day...") }
     var quoteAuthor by remember { mutableStateOf("") }
-    val filteredProducts = products.filter { it.matchesFilter(filter) }
+    val filteredProducts = products
+        .filter { it.matchesFilter(filter) }
+        .sortedByDescending { parseDateOrNull(it.createdAt) ?: java.time.LocalDate.MIN }
 
     LaunchedEffect(Unit) {
         val quote = fetchQuoteOfTheDay()

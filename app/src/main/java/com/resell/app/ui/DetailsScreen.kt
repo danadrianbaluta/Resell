@@ -50,7 +50,9 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -67,13 +69,21 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.resell.app.data.AppScreen
+import com.resell.app.data.formatDateForDisplay
 import com.resell.app.data.PlatformListing
 import com.resell.app.data.Product
 import com.resell.app.data.ProductRepository
 import java.io.File
+import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import nl.dionsegijn.konfetti.compose.KonfettiView
+import nl.dionsegijn.konfetti.core.Party
+import nl.dionsegijn.konfetti.core.Position
+import nl.dionsegijn.konfetti.core.emitter.Emitter
+import java.util.concurrent.TimeUnit
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -90,8 +100,17 @@ fun DetailsScreen(
     var pendingScreen by remember { mutableStateOf<AppScreen?>(null) }
     var showUnsavedDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var celebrationBurst by remember { mutableIntStateOf(0) }
+    var showConfetti by remember { mutableStateOf(false) }
     val hasChanges = draft != original
     val scope = rememberCoroutineScope()
+
+    LaunchedEffect(celebrationBurst) {
+        if (celebrationBurst == 0) return@LaunchedEffect
+        showConfetti = true
+        delay(5_000)
+        showConfetti = false
+    }
 
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val uri = result.data?.data
@@ -116,182 +135,219 @@ fun DetailsScreen(
     }
 
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Spacer(modifier = Modifier.height(10.dp))
+        Box(modifier = Modifier.fillMaxSize()) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color.White, RoundedCornerShape(20.dp))
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 10.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text("Product details", style = MaterialTheme.typography.titleLarge)
-                Text(
-                    if (draft.description.isBlank()) "Create or refine a listing-ready item" else draft.description,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MutedInk
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                Spacer(modifier = Modifier.height(10.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.White, RoundedCornerShape(20.dp))
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    ScreenSelector(current = AppScreen.DETAILS, onSelected = { screen ->
-                        if (screen == AppScreen.DETAILS) return@ScreenSelector
-                        if (hasChanges) {
-                            pendingScreen = screen
-                            showUnsavedDialog = true
-                        } else {
-                            onSelectScreen(screen)
-                        }
-                    }, modifier = Modifier.weight(1f))
-                    Button(
-                        onClick = { saveAndThen { onAfterSave(draft) } },
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = BrandPurple)
-                    ) {
-                        Text("Save")
-                    }
-                }
-            }
-
-            SectionCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    Text("Details", style = MaterialTheme.typography.titleMedium)
-                    OutlinedTextField(
-                        value = draft.description,
-                        onValueChange = { draft = draft.copy(description = it) },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        label = { Text("Description") }
+                    Text("Product details", style = MaterialTheme.typography.titleLarge)
+                    Text(
+                        if (draft.description.isBlank()) "Create or refine a listing-ready item" else draft.description,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MutedInk
                     )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(14.dp),
-                        verticalAlignment = Alignment.Top
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .aspectRatio(1f)
-                                .clip(RoundedCornerShape(18.dp))
-                                .background(Color.White)
-                                .clickable { imagePicker.launch(createImagePickerIntent()) }
-                                ,
-                                contentAlignment = Alignment.Center
-                        ) {
-                            if (draft.imageUri.isNotBlank()) {
-                                AsyncImage(
-                                    model = draft.imageUri,
-                                    contentDescription = null,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.Crop
-                                )
+                        ScreenSelector(current = AppScreen.DETAILS, onSelected = { screen ->
+                            if (screen == AppScreen.DETAILS) return@ScreenSelector
+                            if (hasChanges) {
+                                pendingScreen = screen
+                                showUnsavedDialog = true
                             } else {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Icon(Icons.Rounded.Add, contentDescription = null, tint = BrandPurple, modifier = Modifier.size(34.dp))
-                                    Text("Add image", color = BrandPurple, style = MaterialTheme.typography.labelMedium)
+                                onSelectScreen(screen)
+                            }
+                        }, modifier = Modifier.weight(1f))
+                        Button(
+                            onClick = { saveAndThen { onAfterSave(draft) } },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = BrandPurple)
+                        ) {
+                            Text("Save")
+                        }
+                    }
+                }
+
+                SectionCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        Text("Details", style = MaterialTheme.typography.titleMedium)
+                        OutlinedTextField(
+                            value = draft.description,
+                            onValueChange = { draft = draft.copy(description = it) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            label = { Text("Description") }
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(14.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .aspectRatio(1f)
+                                    .clip(RoundedCornerShape(18.dp))
+                                    .background(Color.White)
+                                    .clickable { imagePicker.launch(createImagePickerIntent()) },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                if (draft.imageUri.isNotBlank()) {
+                                    AsyncImage(
+                                        model = draft.imageUri,
+                                        contentDescription = null,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = ContentScale.Crop
+                                    )
+                                } else {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Icon(Icons.Rounded.Add, contentDescription = null, tint = BrandPurple, modifier = Modifier.size(34.dp))
+                                        Text("Add image", color = BrandPurple, style = MaterialTheme.typography.labelMedium)
+                                    }
                                 }
                             }
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                OutlinedTextField(
+                                    value = draft.purchasePrice,
+                                    onValueChange = { draft = draft.copy(purchasePrice = it) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(16.dp),
+                                    label = { Text("Purchase price") },
+                                    prefix = {
+                                        if (draft.purchasePrice.isNotBlank()) Text("\u00A3")
+                                    },
+                                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                                )
+                                OutlinedTextField(
+                                    value = draft.expenses,
+                                    onValueChange = { draft = draft.copy(expenses = it) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(16.dp),
+                                    label = { Text("Expenses") },
+                                    prefix = {
+                                        if (draft.expenses.isNotBlank()) Text("\u00A3")
+                                    },
+                                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                                )
+                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    Text("Active", color = MutedInk)
+                                    Switch(
+                                        checked = !draft.deleted,
+                                        onCheckedChange = { checked -> draft = draft.copy(deleted = !checked) },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = Color.White,
+                                            checkedTrackColor = BrandPurple
+                                        )
+                                    )
+                                }
+                                OutlinedTextField(
+                                    value = draft.storageLocation,
+                                    onValueChange = { draft = draft.copy(storageLocation = it) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(16.dp),
+                                    label = { Text("Storage location") }
+                                )
+                            }
                         }
-                        Column(
-                            modifier = Modifier.weight(1f),
+                    }
+                }
+
+                SectionCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Text("Sales channels", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            "Once one platform is sold, the others lock to avoid conflicting sale records.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MutedInk
+                        )
+                        val soldPlatform = draft.platforms.firstOrNull { it.sold }?.platform
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            OutlinedTextField(
-                                value = draft.purchasePrice,
-                                onValueChange = { draft = draft.copy(purchasePrice = it) },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp),
-                                label = { Text("Purchase price") },
-                                prefix = {
-                                    if (draft.purchasePrice.isNotBlank()) Text("\u00A3")
-                                },
-                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal)
-                            )
-                            OutlinedTextField(
-                                value = draft.expenses,
-                                onValueChange = { draft = draft.copy(expenses = it) },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(16.dp),
-                                label = { Text("Expenses") },
-                                prefix = {
-                                    if (draft.expenses.isNotBlank()) Text("\u00A3")
-                                },
-                                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal)
-                            )
-                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Text("Active", color = MutedInk)
-                                Switch(
-                                    checked = !draft.deleted,
-                                    onCheckedChange = { checked -> draft = draft.copy(deleted = !checked) },
-                                    colors = SwitchDefaults.colors(
-                                        checkedThumbColor = Color.White,
-                                        checkedTrackColor = BrandPurple
-                                    )
+                            draft.platforms.forEach { listing ->
+                                PlatformSection(
+                                    listing = listing,
+                                    enabled = soldPlatform == null || soldPlatform == listing.platform,
+                                    onMarkedSold = { celebrationBurst++ },
+                                    onListingChange = { updated ->
+                                        draft = draft.copy(platforms = draft.platforms.map {
+                                            if (it.platform == updated.platform) updated else it
+                                        })
+                                    }
                                 )
                             }
                         }
                     }
                 }
-            }
 
-            SectionCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Text("Sales channels", style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        "Once one platform is sold, the others lock to avoid conflicting sale records.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MutedInk
-                    )
-                    val soldPlatform = draft.platforms.firstOrNull { it.sold }?.platform
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                SectionCard(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        draft.platforms.forEach { listing ->
-                            PlatformSection(
-                                listing = listing,
-                                enabled = soldPlatform == null || soldPlatform == listing.platform,
-                                onListingChange = { updated ->
-                                    draft = draft.copy(platforms = draft.platforms.map {
-                                        if (it.platform == updated.platform) updated else it
-                                    })
-                                }
-                            )
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Permanent delete", style = MaterialTheme.typography.titleMedium, color = BrandOrange)
+                            Text("Remove this product forever. This cannot be undone.", style = MaterialTheme.typography.bodyMedium, color = MutedInk)
+                        }
+                        Button(
+                            onClick = { showDeleteDialog = true },
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = BrandOrange)
+                        ) {
+                            Icon(Icons.Rounded.DeleteForever, contentDescription = null)
                         }
                     }
                 }
-            }
 
-            SectionCard(modifier = Modifier.fillMaxWidth()) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text("Permanent delete", style = MaterialTheme.typography.titleMedium, color = BrandOrange)
-                        Text("Remove this product forever. This cannot be undone.", style = MaterialTheme.typography.bodyMedium, color = MutedInk)
-                    }
-                    Button(
-                        onClick = { showDeleteDialog = true },
-                        shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = BrandOrange)
+                SectionCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Icon(Icons.Rounded.DeleteForever, contentDescription = null)
+                        Text("Created", style = MaterialTheme.typography.titleMedium)
+                        Text(draft.createdAt, style = MaterialTheme.typography.bodyMedium, color = MutedInk)
                     }
                 }
+            }
+
+            if (showConfetti) {
+                KonfettiView(
+                    modifier = Modifier.fillMaxSize(),
+                    parties = remember {
+                        listOf(
+                            Party(
+                                speed = 0f,
+                                maxSpeed = 24f,
+                                damping = 0.9f,
+                                spread = 360,
+                                emitter = Emitter(duration = 5, TimeUnit.SECONDS).perSecond(160),
+                                position = Position.Relative(0.5, 0.0)
+                            )
+                        )
+                    }
+                )
             }
         }
     }
@@ -404,6 +460,7 @@ private fun calculateInSampleSize(width: Int, height: Int, reqWidth: Int, reqHei
 private fun PlatformSection(
     listing: PlatformListing,
     enabled: Boolean,
+    onMarkedSold: () -> Unit,
     onListingChange: (PlatformListing) -> Unit
 ) {
     OutlinedCard(
@@ -423,13 +480,24 @@ private fun PlatformSection(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 label = { Text("Price") },
+                prefix = {
+                    if (listing.price.isNotBlank()) Text("\u00A3")
+                },
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal)
             )
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Checkbox(
                     checked = listing.sold,
                     enabled = enabled,
-                    onCheckedChange = { checked -> onListingChange(listing.copy(sold = checked)) }
+                    onCheckedChange = { checked ->
+                        if (checked && !listing.sold) onMarkedSold()
+                        onListingChange(
+                            listing.copy(
+                                sold = checked,
+                                dateSold = if (checked) formatDateForDisplay(LocalDate.now()) else listing.dateSold
+                            )
+                        )
+                    }
                 )
                 Text("Sold", color = MutedInk)
             }
@@ -441,6 +509,9 @@ private fun PlatformSection(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
                 label = { Text("Final price") },
+                prefix = {
+                    if (listing.finalPrice.isNotBlank()) Text("\u00A3")
+                },
                 keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal)
             )
         }

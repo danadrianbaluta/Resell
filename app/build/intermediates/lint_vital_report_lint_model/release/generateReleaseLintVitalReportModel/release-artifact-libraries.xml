@@ -769,6 +769,27 @@
       jars="C:\Users\danad\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlinx\kotlinx-serialization-json-jvm\1.6.3\2241746853abf04073e3ab0dcd9e6729d363b313\kotlinx-serialization-json-jvm-1.6.3.jar"
       resolved="org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.6.3"/>
   <library
+      name="nl.dionsegijn:konfetti-compose:2.0.5@aar"
+      jars="C:\Users\danad\.gradle\caches\9.0.0\transforms\54a778914a7dc48730a880e404b82533\transformed\konfetti-compose-2.0.5\jars\classes.jar"
+      resolved="nl.dionsegijn:konfetti-compose:2.0.5"
+      folder="C:\Users\danad\.gradle\caches\9.0.0\transforms\54a778914a7dc48730a880e404b82533\transformed\konfetti-compose-2.0.5"
+      manifest="AndroidManifest.xml"
+      resFolder="res"
+      assetsFolder="assets"
+      lintJar="lint.jar"
+      publicResources="public.txt"
+      symbolFile="R.txt"
+      externalAnnotations="annotations.zip"
+      proguardRules="proguard.txt"/>
+  <library
+      name="com.squareup.okhttp3:okhttp:4.12.0@jar"
+      jars="C:\Users\danad\.gradle\caches\modules-2\files-2.1\com.squareup.okhttp3\okhttp\4.12.0\2f4525d4a200e97e1b87449c2cd9bd2e25b7e8cd\okhttp-4.12.0.jar"
+      resolved="com.squareup.okhttp3:okhttp:4.12.0"/>
+  <library
+      name="org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.0@jar"
+      jars="C:\Users\danad\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-stdlib-jdk8\1.9.0\e000bd084353d84c9e888f6fb341dc1f5b79d948\kotlin-stdlib-jdk8-1.9.0.jar"
+      resolved="org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.0"/>
+  <library
       name="androidx.annotation:annotation-experimental:1.4.0@aar"
       jars="C:\Users\danad\.gradle\caches\9.0.0\transforms\905dc40912f51f73af3a5d411627a156\transformed\annotation-experimental-1.4.0\jars\classes.jar"
       resolved="androidx.annotation:annotation-experimental:1.4.0"
@@ -924,21 +945,13 @@
       jars="C:\Users\danad\.gradle\caches\modules-2\files-2.1\androidx.annotation\annotation-jvm\1.8.0\b8a16fe526014b7941c1debaccaf9c5153692dbb\annotation-jvm-1.8.0.jar"
       resolved="androidx.annotation:annotation-jvm:1.8.0"/>
   <library
-      name="com.squareup.okhttp3:okhttp:4.12.0@jar"
-      jars="C:\Users\danad\.gradle\caches\modules-2\files-2.1\com.squareup.okhttp3\okhttp\4.12.0\2f4525d4a200e97e1b87449c2cd9bd2e25b7e8cd\okhttp-4.12.0.jar"
-      resolved="com.squareup.okhttp3:okhttp:4.12.0"/>
-  <library
-      name="org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.0@jar"
-      jars="C:\Users\danad\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-stdlib-jdk8\1.9.0\e000bd084353d84c9e888f6fb341dc1f5b79d948\kotlin-stdlib-jdk8-1.9.0.jar"
-      resolved="org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.0"/>
+      name="org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.0@jar"
+      jars="C:\Users\danad\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-stdlib-jdk7\1.9.0\f320478990d05e0cfaadd74f9619fd6027adbf37\kotlin-stdlib-jdk7-1.9.0.jar"
+      resolved="org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.0"/>
   <library
       name="com.squareup.okio:okio-jvm:3.9.0@jar"
       jars="C:\Users\danad\.gradle\caches\modules-2\files-2.1\com.squareup.okio\okio-jvm\3.9.0\eaa4f7858a1e80908b1a2e861e662edd7c6cbbb5\okio-jvm-3.9.0.jar"
       resolved="com.squareup.okio:okio-jvm:3.9.0"/>
-  <library
-      name="org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.0@jar"
-      jars="C:\Users\danad\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-stdlib-jdk7\1.9.0\f320478990d05e0cfaadd74f9619fd6027adbf37\kotlin-stdlib-jdk7-1.9.0.jar"
-      resolved="org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.0"/>
   <library
       name="org.jetbrains.kotlin:kotlin-stdlib:2.0.0@jar"
       jars="C:\Users\danad\.gradle\caches\modules-2\files-2.1\org.jetbrains.kotlin\kotlin-stdlib\2.0.0\b48df2c4aede9586cc931ead433bc02d6fd7879e\kotlin-stdlib-2.0.0.jar"
@@ -968,6 +981,10 @@
       name="androidx.resourceinspection:resourceinspection-annotation:1.0.1@jar"
       jars="C:\Users\danad\.gradle\caches\modules-2\files-2.1\androidx.resourceinspection\resourceinspection-annotation\1.0.1\8c21f8ff5d96d5d52c948707f7e4d6ca6773feef\resourceinspection-annotation-1.0.1.jar"
       resolved="androidx.resourceinspection:resourceinspection-annotation:1.0.1"/>
+  <library
+      name="nl.dionsegijn:konfetti-core:2.0.5@jar"
+      jars="C:\Users\danad\.gradle\caches\modules-2\files-2.1\nl.dionsegijn\konfetti-core\2.0.5\5589ae2ab81ef2ae1fb8aa51b3dd2d7744b5c700\konfetti-core-2.0.5.jar"
+      resolved="nl.dionsegijn:konfetti-core:2.0.5"/>
   <library
       name="androidx.constraintlayout:constraintlayout-solver:2.0.1@jar"
       jars="C:\Users\danad\.gradle\caches\modules-2\files-2.1\androidx.constraintlayout\constraintlayout-solver\2.0.1\30988fe2d77f3fe3bf7551bb8a8b795fad7e7226\constraintlayout-solver-2.0.1.jar"

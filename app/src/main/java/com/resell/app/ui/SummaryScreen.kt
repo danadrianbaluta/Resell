@@ -51,6 +51,7 @@ private data class PlatformSummary(
 private data class SummaryStats(
     val totalListed: Int,
     val totalSoldAmount: Double,
+    val totalPurchases: Double,
     val totalExpenses: Double,
     val net: Double,
     val vinted: PlatformSummary,
@@ -250,6 +251,7 @@ private fun TotalSummaryCard(stats: SummaryStats) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 TotalItem("Sold", formatCurrency(stats.totalSoldAmount), BrandPurple)
+                TotalItem("Purchases", formatCurrency(stats.totalPurchases), BrandPurple)
                 TotalItem("Expenses", formatCurrency(stats.totalExpenses), BrandPurple)
                 TotalItem("Net", formatCurrency(stats.net), BrandPurple)
             }
@@ -299,15 +301,16 @@ private fun calculateStats(products: List<Product>, start: LocalDate, end: Local
     val etsy = platformSummary(activeProducts, PlatformType.ETSY, start, end)
 
     val totalSoldAmount = vinted.soldAmount + ebay.soldAmount + etsy.soldAmount
-    val totalExpenses = activeProducts
-        .filter { it.hasActivityBetween(start, end) }
-        .sumOf { parseAmount(it.expenses) }
+    val productsInRange = activeProducts.filter { it.hasActivityBetween(start, end) }
+    val totalPurchases = productsInRange.sumOf { parseAmount(it.purchasePrice) }
+    val totalExpenses = productsInRange.sumOf { parseAmount(it.expenses) }
 
     return SummaryStats(
         totalListed = totalListed,
         totalSoldAmount = totalSoldAmount,
+        totalPurchases = totalPurchases,
         totalExpenses = totalExpenses,
-        net = totalSoldAmount - totalExpenses,
+        net = totalSoldAmount - totalPurchases - totalExpenses,
         vinted = vinted,
         ebay = ebay,
         etsy = etsy

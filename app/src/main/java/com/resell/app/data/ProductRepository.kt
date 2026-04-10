@@ -38,7 +38,9 @@ class ProductRepository(private val context: Context) {
         if (raw.isBlank()) {
             emptyList()
         } else {
-            runCatching { json.decodeFromString<List<Product>>(raw) }.getOrDefault(emptyList()).map { it.normalized() }
+            runCatching { json.decodeFromString<List<Product>>(raw) }
+                .getOrDefault(emptyList())
+                .map { it.normalized(inferCreatedAtFromImageUri(it.imageUri)) }
         }
     }
 
@@ -54,14 +56,15 @@ class ProductRepository(private val context: Context) {
             val current = preferences[productsKey]
                 ?.let { runCatching { json.decodeFromString<List<Product>>(it) }.getOrNull() }
                 .orEmpty()
-                .map { it.normalized() }
+                .map { it.normalized(inferCreatedAtFromImageUri(it.imageUri)) }
                 .toMutableList()
 
             val index = current.indexOfFirst { it.id == product.id }
             if (index >= 0) {
-                current[index] = product.normalized()
+                val existing = current[index]
+                current[index] = product.copy(createdAt = existing.createdAt).normalized(existing.createdAt)
             } else {
-                current.add(product.normalized())
+                current.add(product.normalized(inferCreatedAtFromImageUri(product.imageUri)))
             }
 
             preferences[productsKey] = json.encodeToString(current)
@@ -73,7 +76,7 @@ class ProductRepository(private val context: Context) {
             val current = preferences[productsKey]
                 ?.let { runCatching { json.decodeFromString<List<Product>>(it) }.getOrNull() }
                 .orEmpty()
-                .map { it.normalized() }
+                .map { it.normalized(inferCreatedAtFromImageUri(it.imageUri)) }
                 .filterNot { it.id == productId }
 
             preferences[productsKey] = json.encodeToString(current)
@@ -86,8 +89,10 @@ class ProductRepository(private val context: Context) {
             products = products.first().map { product ->
                 BackupProduct(
                     id = product.id,
+                    createdAt = product.createdAt,
                     description = product.description,
                     purchasePrice = product.purchasePrice,
+                    storageLocation = product.storageLocation,
                     expenses = product.expenses,
                     deleted = product.deleted,
                     platforms = product.platforms.map { it.normalized() },
@@ -114,8 +119,10 @@ class ProductRepository(private val context: Context) {
             val restoredProducts = payload.products.map { backup ->
                 Product(
                     id = backup.id,
+                    createdAt = backup.createdAt,
                     description = backup.description,
                     purchasePrice = backup.purchasePrice,
+                    storageLocation = backup.storageLocation,
                     expenses = backup.expenses,
                     deleted = backup.deleted,
                     imageUri = backup.image?.let { restoreBackupImage(backup.id, it) }.orEmpty(),

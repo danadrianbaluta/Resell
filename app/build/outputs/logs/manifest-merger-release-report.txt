@@ -21,6 +21,7 @@ MERGED from [androidx.dynamicanimation:dynamicanimation:1.0.0] C:\Users\danad\.g
 MERGED from [androidx.vectordrawable:vectordrawable-animated:1.1.0] C:\Users\danad\.gradle\caches\9.0.0\transforms\6f0d36b47d559f31eb5af9a0209bcd80\transformed\vectordrawable-animated-1.1.0\AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.vectordrawable:vectordrawable:1.1.0] C:\Users\danad\.gradle\caches\9.0.0\transforms\762867dcc54b2fcbc514f701e0d0afca\transformed\vectordrawable-1.1.0\AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.viewpager2:viewpager2:1.0.0] C:\Users\danad\.gradle\caches\9.0.0\transforms\2474f58c61ee84d8b4802cd5cd498a2b\transformed\viewpager2-1.0.0\AndroidManifest.xml:17:1-24:12
+MERGED from [nl.dionsegijn:konfetti-compose:2.0.5] C:\Users\danad\.gradle\caches\9.0.0\transforms\54a778914a7dc48730a880e404b82533\transformed\konfetti-compose-2.0.5\AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.compose.material3:material3-android:1.2.1] C:\Users\danad\.gradle\caches\9.0.0\transforms\ab70e62aedaff78a5d105490f9ddc9d9\transformed\material3-release\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.compose.material:material-icons-core-android:1.6.8] C:\Users\danad\.gradle\caches\9.0.0\transforms\2934d847e06559f74ee16e83dedd369f\transformed\material-icons-core-release\AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.compose.material:material-icons-extended-android:1.6.8] C:\Users\danad\.gradle\caches\9.0.0\transforms\cfb27a1505e00bfa93af09202c504cc5\transformed\material-icons-extended-release\AndroidManifest.xml:2:1-7:12
@@ -46,9 +47,9 @@ MERGED from [androidx.viewpager:viewpager:1.0.0] C:\Users\danad\.gradle\caches\9
 MERGED from [androidx.customview:customview:1.1.0] C:\Users\danad\.gradle\caches\9.0.0\transforms\879cbfdd5f2f9fb72573a9fcd3f85343\transformed\customview-1.1.0\AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.legacy:legacy-support-core-utils:1.0.0] C:\Users\danad\.gradle\caches\9.0.0\transforms\0dcd91a0ad44d959cb565556392f55a7\transformed\legacy-support-core-utils-1.0.0\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.autofill:autofill:1.0.0] C:\Users\danad\.gradle\caches\9.0.0\transforms\a2200240219dcd353f80649e01ca84ad\transformed\autofill-1.0.0\AndroidManifest.xml:17:1-24:12
-MERGED from [androidx.loader:loader:1.0.0] C:\Users\danad\.gradle\caches\9.0.0\transforms\dc194fbc24ea153bf4208cd29b4e2011\transformed\loader-1.0.0\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.emoji2:emoji2-views-helper:1.3.0] C:\Users\danad\.gradle\caches\9.0.0\transforms\8251ee115c732a836c7fbadf7800cf69\transformed\emoji2-views-helper-1.3.0\AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.emoji2:emoji2:1.3.0] C:\Users\danad\.gradle\caches\9.0.0\transforms\69c26267e674cf4d9d2a7286a927b866\transformed\emoji2-1.3.0\AndroidManifest.xml:17:1-35:12
+MERGED from [androidx.loader:loader:1.0.0] C:\Users\danad\.gradle\caches\9.0.0\transforms\dc194fbc24ea153bf4208cd29b4e2011\transformed\loader-1.0.0\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.core:core:1.13.1] C:\Users\danad\.gradle\caches\9.0.0\transforms\b675e550b0e89e54ba4c716cfdf37c85\transformed\core-1.13.1\AndroidManifest.xml:17:1-30:12
 MERGED from [androidx.savedstate:savedstate-ktx:1.2.1] C:\Users\danad\.gradle\caches\9.0.0\transforms\197b05794205b75e8a9eaa91264391f1\transformed\savedstate-ktx-1.2.1\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.savedstate:savedstate:1.2.1] C:\Users\danad\.gradle\caches\9.0.0\transforms\f37e8be5646e61fddfe9f7501cd00897\transformed\savedstate-1.2.1\AndroidManifest.xml:17:1-22:12
@@ -192,6 +193,8 @@ MERGED from [androidx.vectordrawable:vectordrawable:1.1.0] C:\Users\danad\.gradl
 MERGED from [androidx.vectordrawable:vectordrawable:1.1.0] C:\Users\danad\.gradle\caches\9.0.0\transforms\762867dcc54b2fcbc514f701e0d0afca\transformed\vectordrawable-1.1.0\AndroidManifest.xml:20:5-22:41
 MERGED from [androidx.viewpager2:viewpager2:1.0.0] C:\Users\danad\.gradle\caches\9.0.0\transforms\2474f58c61ee84d8b4802cd5cd498a2b\transformed\viewpager2-1.0.0\AndroidManifest.xml:20:5-22:41
 MERGED from [androidx.viewpager2:viewpager2:1.0.0] C:\Users\danad\.gradle\caches\9.0.0\transforms\2474f58c61ee84d8b4802cd5cd498a2b\transformed\viewpager2-1.0.0\AndroidManifest.xml:20:5-22:41
+MERGED from [nl.dionsegijn:konfetti-compose:2.0.5] C:\Users\danad\.gradle\caches\9.0.0\transforms\54a778914a7dc48730a880e404b82533\transformed\konfetti-compose-2.0.5\AndroidManifest.xml:5:5-44
+MERGED from [nl.dionsegijn:konfetti-compose:2.0.5] C:\Users\danad\.gradle\caches\9.0.0\transforms\54a778914a7dc48730a880e404b82533\transformed\konfetti-compose-2.0.5\AndroidManifest.xml:5:5-44
 MERGED from [androidx.compose.material3:material3-android:1.2.1] C:\Users\danad\.gradle\caches\9.0.0\transforms\ab70e62aedaff78a5d105490f9ddc9d9\transformed\material3-release\AndroidManifest.xml:20:5-44
 MERGED from [androidx.compose.material3:material3-android:1.2.1] C:\Users\danad\.gradle\caches\9.0.0\transforms\ab70e62aedaff78a5d105490f9ddc9d9\transformed\material3-release\AndroidManifest.xml:20:5-44
 MERGED from [androidx.compose.material:material-icons-core-android:1.6.8] C:\Users\danad\.gradle\caches\9.0.0\transforms\2934d847e06559f74ee16e83dedd369f\transformed\material-icons-core-release\AndroidManifest.xml:5:5-44
@@ -242,12 +245,12 @@ MERGED from [androidx.legacy:legacy-support-core-utils:1.0.0] C:\Users\danad\.gr
 MERGED from [androidx.legacy:legacy-support-core-utils:1.0.0] C:\Users\danad\.gradle\caches\9.0.0\transforms\0dcd91a0ad44d959cb565556392f55a7\transformed\legacy-support-core-utils-1.0.0\AndroidManifest.xml:20:5-44
 MERGED from [androidx.autofill:autofill:1.0.0] C:\Users\danad\.gradle\caches\9.0.0\transforms\a2200240219dcd353f80649e01ca84ad\transformed\autofill-1.0.0\AndroidManifest.xml:20:5-22:41
 MERGED from [androidx.autofill:autofill:1.0.0] C:\Users\danad\.gradle\caches\9.0.0\transforms\a2200240219dcd353f80649e01ca84ad\transformed\autofill-1.0.0\AndroidManifest.xml:20:5-22:41
-MERGED from [androidx.loader:loader:1.0.0] C:\Users\danad\.gradle\caches\9.0.0\transforms\dc194fbc24ea153bf4208cd29b4e2011\transformed\loader-1.0.0\AndroidManifest.xml:20:5-44
-MERGED from [androidx.loader:loader:1.0.0] C:\Users\danad\.gradle\caches\9.0.0\transforms\dc194fbc24ea153bf4208cd29b4e2011\transformed\loader-1.0.0\AndroidManifest.xml:20:5-44
 MERGED from [androidx.emoji2:emoji2-views-helper:1.3.0] C:\Users\danad\.gradle\caches\9.0.0\transforms\8251ee115c732a836c7fbadf7800cf69\transformed\emoji2-views-helper-1.3.0\AndroidManifest.xml:5:5-44
 MERGED from [androidx.emoji2:emoji2-views-helper:1.3.0] C:\Users\danad\.gradle\caches\9.0.0\transforms\8251ee115c732a836c7fbadf7800cf69\transformed\emoji2-views-helper-1.3.0\AndroidManifest.xml:5:5-44
 MERGED from [androidx.emoji2:emoji2:1.3.0] C:\Users\danad\.gradle\caches\9.0.0\transforms\69c26267e674cf4d9d2a7286a927b866\transformed\emoji2-1.3.0\AndroidManifest.xml:21:5-44
 MERGED from [androidx.emoji2:emoji2:1.3.0] C:\Users\danad\.gradle\caches\9.0.0\transforms\69c26267e674cf4d9d2a7286a927b866\transformed\emoji2-1.3.0\AndroidManifest.xml:21:5-44
+MERGED from [androidx.loader:loader:1.0.0] C:\Users\danad\.gradle\caches\9.0.0\transforms\dc194fbc24ea153bf4208cd29b4e2011\transformed\loader-1.0.0\AndroidManifest.xml:20:5-44
+MERGED from [androidx.loader:loader:1.0.0] C:\Users\danad\.gradle\caches\9.0.0\transforms\dc194fbc24ea153bf4208cd29b4e2011\transformed\loader-1.0.0\AndroidManifest.xml:20:5-44
 MERGED from [androidx.core:core:1.13.1] C:\Users\danad\.gradle\caches\9.0.0\transforms\b675e550b0e89e54ba4c716cfdf37c85\transformed\core-1.13.1\AndroidManifest.xml:20:5-44
 MERGED from [androidx.core:core:1.13.1] C:\Users\danad\.gradle\caches\9.0.0\transforms\b675e550b0e89e54ba4c716cfdf37c85\transformed\core-1.13.1\AndroidManifest.xml:20:5-44
 MERGED from [androidx.savedstate:savedstate-ktx:1.2.1] C:\Users\danad\.gradle\caches\9.0.0\transforms\197b05794205b75e8a9eaa91264391f1\transformed\savedstate-ktx-1.2.1\AndroidManifest.xml:20:5-44

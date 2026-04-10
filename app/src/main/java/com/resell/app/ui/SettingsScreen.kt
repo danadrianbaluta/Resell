@@ -48,7 +48,7 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var statusMessage by remember { mutableStateOf("Backup your products and images into one file, then restore anytime.") }
+    var statusMessage by remember { mutableStateOf("Backup and restore your products.") }
     val backupPreferences by repository.backupPreferences.collectAsState(initial = com.resell.app.data.BackupPreferences())
 
     val createBackupLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri: Uri? ->
@@ -111,19 +111,13 @@ fun SettingsScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Settings", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
-                    ScreenSelector(
-                        current = AppScreen.SETTINGS,
-                        onSelected = onSelectScreen,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+                Text("Settings", style = MaterialTheme.typography.titleLarge)
                 Text(statusMessage, style = MaterialTheme.typography.labelMedium, color = MutedInk)
+                ScreenSelector(
+                    current = AppScreen.SETTINGS,
+                    onSelected = onSelectScreen,
+                    modifier = Modifier.fillMaxWidth(0.45f)
+                )
             }
 
             SectionCard(modifier = Modifier.fillMaxWidth()) {

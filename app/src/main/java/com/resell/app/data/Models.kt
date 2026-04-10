@@ -2,16 +2,20 @@ package com.resell.app.data
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 @Serializable
 data class Product(
     val id: String = UUID.randomUUID().toString(),
+    val createdAt: String = formatDateForDisplay(LocalDate.now()),
     val description: String = "",
     val purchasePrice: String = "",
     val imageUri: String = "",
+    val storageLocation: String = "",
     val expenses: String = "",
     val deleted: Boolean = false,
     val platforms: List<PlatformListing> = PlatformType.entries.map { PlatformListing(platform = it) }
@@ -35,11 +39,10 @@ enum class PlatformType(val label: String) {
 }
 
 enum class ProductFilter(val label: String) {
-    LISTED("Listed products"),
-    UNLISTED("Unlisted products"),
-    SOLD("Sold products"),
-    DELETED("Inactive products"),
-    ALL("All products")
+    LISTED("Listed items"),
+    UNLISTED("Unlisted items"),
+    SOLD("Sold items"),
+    INACTIVE("Inactive items")
 }
 
 enum class AppScreen(val label: String) {
@@ -59,8 +62,10 @@ data class BackupPayload(
 @Serializable
 data class BackupProduct(
     val id: String,
+    val createdAt: String = "",
     val description: String,
     val purchasePrice: String,
+    val storageLocation: String = "",
     val expenses: String,
     val deleted: Boolean,
     val platforms: List<PlatformListing>,
@@ -81,18 +86,24 @@ data class BackupPreferences(
 )
 
 fun ProductFilter.summaryLabel(count: Int): String = when (this) {
-    ProductFilter.ALL -> "$count products"
     ProductFilter.LISTED -> "$count listed"
     ProductFilter.UNLISTED -> "$count unlisted"
     ProductFilter.SOLD -> "$count sold"
-    ProductFilter.DELETED -> "$count inactive"
+    ProductFilter.INACTIVE -> "$count inactive"
 }
 
-fun Product.normalized(): Product {
+fun Product.normalized(createdAtFallback: String? = null): Product {
     val alignedPlatforms = PlatformType.entries.map { type ->
         (platforms.firstOrNull { it.platform == type } ?: PlatformListing(platform = type)).normalized()
     }
-    return copy(platforms = alignedPlatforms)
+    return copy(
+        createdAt = when {
+            createdAt.isNotBlank() -> formatDateForDisplay(createdAt)
+            !createdAtFallback.isNullOrBlank() -> formatDateForDisplay(createdAtFallback)
+            else -> formatDateForDisplay(LocalDate.now())
+        },
+        platforms = alignedPlatforms
+    )
 }
 
 fun PlatformListing.normalized(): PlatformListing = copy(
@@ -108,8 +119,7 @@ fun Product.matchesFilter(filter: ProductFilter): Boolean {
         ProductFilter.LISTED -> !deleted && hasListings && !hasSales
         ProductFilter.UNLISTED -> !deleted && !hasListings && !hasSales
         ProductFilter.SOLD -> !deleted && hasSales
-        ProductFilter.DELETED -> deleted
-        ProductFilter.ALL -> true
+        ProductFilter.INACTIVE -> deleted
     }
 }
 
@@ -138,3 +148,17 @@ fun parseDateOrNull(value: String): LocalDate? {
 }
 
 fun parseAmount(value: String): Double = value.replace(",", ".").toDoubleOrNull() ?: 0.0
+
+fun inferCreatedAtFromImageUri(imageUri: String): String? {
+    val fileName = runCatching { android.net.Uri.parse(imageUri).lastPathSegment }.getOrNull().orEmpty()
+    val timestamp = fileName
+        .substringAfterLast('_', "")
+        .substringBefore('.')
+        .toLongOrNull()
+        ?: return null
+
+    val localDate = Instant.ofEpochMilli(timestamp)
+        .atZone(ZoneId.systemDefault())
+        .toLocalDate()
+    return formatDateForDisplay(localDate)
+}
