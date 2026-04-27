@@ -70,6 +70,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.resell.app.data.AppScreen
 import com.resell.app.data.formatDateForDisplay
+import com.resell.app.data.inferImageDateFromImageUri
 import com.resell.app.data.PlatformListing
 import com.resell.app.data.Product
 import com.resell.app.data.ProductRepository
@@ -95,7 +96,9 @@ fun DetailsScreen(
     onSelectScreen: (AppScreen) -> Unit
 ) {
     val context = LocalContext.current
-    val original = remember(existingProduct) { existingProduct ?: Product() }
+    val original = remember(existingProduct) {
+        existingProduct ?: Product(createdAt = formatDateForDisplay(LocalDate.now()))
+    }
     var draft by remember(existingProduct?.id) { mutableStateOf(original) }
     var pendingScreen by remember { mutableStateOf<AppScreen?>(null) }
     var showUnsavedDialog by remember { mutableStateOf(false) }
@@ -103,6 +106,10 @@ fun DetailsScreen(
     var celebrationBurst by remember { mutableIntStateOf(0) }
     var showConfetti by remember { mutableStateOf(false) }
     val hasChanges = draft != original
+    val thumbnailDate = remember(draft.imageUri) { inferImageDateFromImageUri(draft.imageUri).orEmpty() }
+    val thumbnailPath = remember(draft.imageUri) {
+        runCatching { Uri.parse(draft.imageUri).path.orEmpty() }.getOrDefault("")
+    }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(celebrationBurst) {
@@ -140,9 +147,7 @@ fun DetailsScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 10.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                    .padding(horizontal = 10.dp)
             ) {
                 Spacer(modifier = Modifier.height(10.dp))
                 Column(
@@ -182,6 +187,14 @@ fun DetailsScreen(
                     }
                 }
 
+                Spacer(modifier = Modifier.height(12.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                 SectionCard(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                         Text("Details", style = MaterialTheme.typography.titleMedium)
@@ -324,11 +337,27 @@ fun DetailsScreen(
                 SectionCard(modifier = Modifier.fillMaxWidth()) {
                     Column(
                         modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Text("Created", style = MaterialTheme.typography.titleMedium)
-                        Text(draft.createdAt, style = MaterialTheme.typography.bodyMedium, color = MutedInk)
+                        DateField(
+                            label = "Created at",
+                            value = draft.createdAt,
+                            showBorder = true,
+                            modifier = Modifier.fillMaxWidth()
+                        ) { draft = draft.copy(createdAt = it) }
+                        Text(
+                            "Thumbnail date: ${thumbnailDate.ifBlank { "Unavailable" }}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MutedInk
+                        )
+                        Text(
+                            "Thumbnail path: ${thumbnailPath.ifBlank { "Unavailable" }}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MutedInk
+                        )
                     }
+                }
                 }
             }
 

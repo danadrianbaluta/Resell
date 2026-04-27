@@ -11,7 +11,7 @@ import java.util.UUID
 @Serializable
 data class Product(
     val id: String = UUID.randomUUID().toString(),
-    val createdAt: String = formatDateForDisplay(LocalDate.now()),
+    val createdAt: String = "",
     val description: String = "",
     val purchasePrice: String = "",
     val imageUri: String = "",
@@ -35,7 +35,8 @@ data class PlatformListing(
 enum class PlatformType(val label: String) {
     VINTED("Vinted"),
     EBAY("eBay"),
-    ETSY("Etsy")
+    ETSY("Etsy"),
+    FACEBOOK("Facebook")
 }
 
 enum class ProductFilter(val label: String) {
@@ -75,6 +76,7 @@ data class BackupProduct(
 @Serializable
 data class BackupImage(
     @SerialName("file_name") val fileName: String,
+    @SerialName("timestamp_ms") val timestampMillis: Long? = null,
     @SerialName("mime_type") val mimeType: String = "image/jpeg",
     @SerialName("base64_data") val base64Data: String
 )
@@ -92,16 +94,12 @@ fun ProductFilter.summaryLabel(count: Int): String = when (this) {
     ProductFilter.INACTIVE -> "$count inactive"
 }
 
-fun Product.normalized(createdAtFallback: String? = null): Product {
+fun Product.normalized(): Product {
     val alignedPlatforms = PlatformType.entries.map { type ->
         (platforms.firstOrNull { it.platform == type } ?: PlatformListing(platform = type)).normalized()
     }
     return copy(
-        createdAt = when {
-            createdAt.isNotBlank() -> formatDateForDisplay(createdAt)
-            !createdAtFallback.isNullOrBlank() -> formatDateForDisplay(createdAtFallback)
-            else -> formatDateForDisplay(LocalDate.now())
-        },
+        createdAt = createdAt.trim().takeIf { it.isNotBlank() }?.let(::formatDateForDisplay).orEmpty(),
         platforms = alignedPlatforms
     )
 }
@@ -149,14 +147,16 @@ fun parseDateOrNull(value: String): LocalDate? {
 
 fun parseAmount(value: String): Double = value.replace(",", ".").toDoubleOrNull() ?: 0.0
 
-fun inferCreatedAtFromImageUri(imageUri: String): String? {
+fun inferImageTimestampFromImageUri(imageUri: String): Long? {
     val fileName = runCatching { android.net.Uri.parse(imageUri).lastPathSegment }.getOrNull().orEmpty()
-    val timestamp = fileName
+    return fileName
         .substringAfterLast('_', "")
         .substringBefore('.')
         .toLongOrNull()
-        ?: return null
+}
 
+fun inferImageDateFromImageUri(imageUri: String): String? {
+    val timestamp = inferImageTimestampFromImageUri(imageUri) ?: return null
     val localDate = Instant.ofEpochMilli(timestamp)
         .atZone(ZoneId.systemDefault())
         .toLocalDate()

@@ -12,6 +12,7 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import java.io.File
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit
@@ -38,9 +39,7 @@ class ProductRepository(private val context: Context) {
         if (raw.isBlank()) {
             emptyList()
         } else {
-            runCatching { json.decodeFromString<List<Product>>(raw) }
-                .getOrDefault(emptyList())
-                .map { it.normalized(inferCreatedAtFromImageUri(it.imageUri)) }
+            decodeProducts(raw).map(::normalizeStoredProduct)
         }
     }
 
@@ -54,17 +53,22 @@ class ProductRepository(private val context: Context) {
     suspend fun saveProduct(product: Product) {
         context.dataStore.edit { preferences ->
             val current = preferences[productsKey]
-                ?.let { runCatching { json.decodeFromString<List<Product>>(it) }.getOrNull() }
+                ?.let(::decodeProductsOrNull)
                 .orEmpty()
-                .map { it.normalized(inferCreatedAtFromImageUri(it.imageUri)) }
+                .map(::normalizeStoredProduct)
                 .toMutableList()
 
             val index = current.indexOfFirst { it.id == product.id }
             if (index >= 0) {
                 val existing = current[index]
-                current[index] = product.copy(createdAt = existing.createdAt).normalized(existing.createdAt)
+                current[index] = product
+                    .copy(createdAt = product.createdAt.ifBlank { existing.createdAt })
+                    .normalized()
             } else {
-                current.add(product.normalized(inferCreatedAtFromImageUri(product.imageUri)))
+                current.add(
+                    product.copy(createdAt = product.createdAt.ifBlank { formatDateForDisplay(LocalDate.now()) })
+                        .normalized()
+                )
             }
 
             preferences[productsKey] = json.encodeToString(current)
@@ -74,12 +78,30 @@ class ProductRepository(private val context: Context) {
     suspend fun deleteProduct(productId: String) {
         context.dataStore.edit { preferences ->
             val current = preferences[productsKey]
-                ?.let { runCatching { json.decodeFromString<List<Product>>(it) }.getOrNull() }
+                ?.let(::decodeProductsOrNull)
                 .orEmpty()
-                .map { it.normalized(inferCreatedAtFromImageUri(it.imageUri)) }
+                .map(::normalizeStoredProduct)
                 .filterNot { it.id == productId }
 
             preferences[productsKey] = json.encodeToString(current)
+        }
+    }
+
+    suspend fun migrateLegacyProducts() {
+        context.dataStore.edit { preferences ->
+            val raw = preferences[productsKey].orEmpty()
+            if (raw.isBlank()) return@edit
+
+            val decoded = decodeProductsOrNull(raw) ?: return@edit
+            val normalized = decoded.map { product ->
+                val migratedCreatedAt = product.createdAt.ifBlank {
+                    inferImageDateFromImageUri(product.imageUri) ?: formatDateForDisplay(LocalDate.now())
+                }
+                product.copy(createdAt = migratedCreatedAt).normalized()
+            }
+            if (normalized != decoded) {
+                preferences[productsKey] = json.encodeToString(normalized)
+            }
         }
     }
 
@@ -192,6 +214,7 @@ class ProductRepository(private val context: Context) {
         val bytes = file.readBytes()
         return BackupImage(
             fileName = file.name,
+            timestampMillis = inferImageTimestampFromImageUri(imageUri),
             base64Data = Base64.encodeToString(bytes, Base64.NO_WRAP)
         )
     }
@@ -200,10 +223,25 @@ class ProductRepository(private val context: Context) {
         val bytes = Base64.decode(backupImage.base64Data, Base64.DEFAULT)
         val extension = backupImage.fileName.substringAfterLast('.', "jpg")
         val imagesDir = File(context.filesDir, "product-images").apply { mkdirs() }
-        val targetFile = File(imagesDir, "${productId}_${System.currentTimeMillis()}.$extension")
+        val timestamp = backupImage.timestampMillis
+            ?: inferTimestampFromFileName(backupImage.fileName)
+            ?: System.currentTimeMillis()
+        val targetFile = File(imagesDir, "${productId}_${timestamp}.$extension")
         targetFile.writeBytes(bytes)
         return Uri.fromFile(targetFile).toString()
     }
+
+    private fun decodeProducts(raw: String): List<Product> =
+        decodeProductsOrNull(raw).orEmpty()
+
+    private fun decodeProductsOrNull(raw: String): List<Product>? =
+        runCatching { json.decodeFromString<List<Product>>(raw) }.getOrNull()
+
+    private fun normalizeStoredProduct(product: Product): Product =
+        product.normalized()
+
+    private fun inferTimestampFromFileName(fileName: String): Long? =
+        fileName.substringAfterLast('_', "").substringBefore('.').toLongOrNull()
 
     companion object {
         const val GOOGLE_DRIVE_BACKUP_WORK_NAME = "google_drive_backup"

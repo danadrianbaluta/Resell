@@ -99,9 +99,7 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(horizontal = 10.dp)
         ) {
             Spacer(modifier = Modifier.height(10.dp))
             Column(
@@ -120,6 +118,14 @@ fun SettingsScreen(
                 )
             }
 
+            Spacer(modifier = Modifier.height(12.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
             SectionCard(modifier = Modifier.fillMaxWidth()) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -238,6 +244,7 @@ fun SettingsScreen(
                         color = MutedInk
                     )
                 }
+            }
             }
         }
     }

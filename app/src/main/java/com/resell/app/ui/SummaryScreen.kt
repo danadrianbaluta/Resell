@@ -49,14 +49,18 @@ private data class PlatformSummary(
 )
 
 private data class SummaryStats(
+    val stock: Int,
     val totalListed: Int,
+    val stockCost: Double,
+    val listedGain: Double,
     val totalSoldAmount: Double,
     val totalPurchases: Double,
     val totalExpenses: Double,
     val net: Double,
     val vinted: PlatformSummary,
     val ebay: PlatformSummary,
-    val etsy: PlatformSummary
+    val etsy: PlatformSummary,
+    val facebook: PlatformSummary
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,35 +83,38 @@ fun SummaryScreen(
     val years = remember(today.year) { (today.year - 5..today.year + 2).toList().reversed() }
 
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { innerPadding ->
-        androidx.compose.foundation.lazy.LazyColumn(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 10.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(horizontal = 10.dp)
         ) {
-            item {
-                Spacer(modifier = Modifier.height(10.dp))
-            }
-            item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color.White, RoundedCornerShape(20.dp))
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+            Spacer(modifier = Modifier.height(10.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.White, RoundedCornerShape(20.dp))
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text("Summary", style = MaterialTheme.typography.titleLarge)
+                Text("Revenue, listings, and expenses at a glance", style = MaterialTheme.typography.labelMedium, color = MutedInk)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Text("Summary", style = MaterialTheme.typography.titleLarge)
-                    Text("Revenue, listings, and expenses at a glance", style = MaterialTheme.typography.labelMedium, color = MutedInk)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        ScreenSelector(current = AppScreen.SUMMARY, onSelected = onSelectScreen, modifier = Modifier.weight(1f))
-                        Box(modifier = Modifier.weight(1f))
-                    }
+                    ScreenSelector(current = AppScreen.SUMMARY, onSelected = onSelectScreen, modifier = Modifier.weight(1f))
+                    Box(modifier = Modifier.weight(1f))
                 }
             }
+
+            Spacer(modifier = Modifier.height(12.dp))
+            androidx.compose.foundation.lazy.LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
             item {
                 Box(
                     modifier = Modifier
@@ -222,21 +229,31 @@ fun SummaryScreen(
                     }
                 }
             }
-            item { SummaryMetricCard("Total products listed", stats.totalListed.toString(), Ink) }
+            item { InventorySummaryCard(stats = stats) }
             item { TotalSummaryCard(stats = stats) }
             item { PlatformSummaryCard("Vinted", stats.vinted, BrandGreen) }
             item { PlatformSummaryCard("eBay", stats.ebay, BrandBlue) }
             item { PlatformSummaryCard("Etsy", stats.etsy, BrandOrange) }
+            item { PlatformSummaryCard("Facebook", stats.facebook, Color(0xFF1877F2)) }
+        }
         }
     }
 }
 
 @Composable
-private fun SummaryMetricCard(label: String, value: String, accent: Color) {
+private fun InventorySummaryCard(stats: SummaryStats) {
     SectionCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(label, style = MaterialTheme.typography.labelLarge, color = accent)
-            Text(value, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Inventory", style = MaterialTheme.typography.labelLarge, color = Ink)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                TotalItem("Stock", stats.stock.toString(), Ink)
+                TotalItem("Listed", stats.totalListed.toString(), Ink)
+                TotalItem("Cost", formatCurrency(stats.stockCost), Ink)
+                TotalItem("Gain", formatCurrency(stats.listedGain), Ink)
+            }
         }
     }
 }
@@ -288,32 +305,43 @@ private fun PlatformSummaryCard(title: String, summary: PlatformSummary, accent:
 
 private fun calculateStats(products: List<Product>, start: LocalDate, end: LocalDate): SummaryStats {
     val activeProducts = products.filterNot { it.deleted }
+    val stockProducts = activeProducts.filter { product -> product.platforms.none { it.hasSaleRecord() } }
 
-    val totalListed = activeProducts.count { product ->
-        val hasListingInRange = product.platforms.any { listing ->
-            parseDateOrNull(listing.dateListed)?.let { !it.isBefore(start) && !it.isAfter(end) } == true
-        }
-        hasListingInRange && product.platforms.none { it.sold }
+    val listedProducts = stockProducts.filter { product ->
+        product.platforms.any { it.hasListingRecord() }
+    }
+    val totalListed = listedProducts.size
+    val stockCost = stockProducts.sumOf { parseAmount(it.purchasePrice) }
+    val listedGain = listedProducts.sumOf { product ->
+        product.platforms
+            .firstOrNull { it.hasListingRecord() }
+            ?.let { parseAmount(it.price) }
+            ?: 0.0
     }
 
     val vinted = platformSummary(activeProducts, PlatformType.VINTED, start, end)
     val ebay = platformSummary(activeProducts, PlatformType.EBAY, start, end)
     val etsy = platformSummary(activeProducts, PlatformType.ETSY, start, end)
+    val facebook = platformSummary(activeProducts, PlatformType.FACEBOOK, start, end)
 
-    val totalSoldAmount = vinted.soldAmount + ebay.soldAmount + etsy.soldAmount
+    val totalSoldAmount = vinted.soldAmount + ebay.soldAmount + etsy.soldAmount + facebook.soldAmount
     val productsInRange = activeProducts.filter { it.hasActivityBetween(start, end) }
     val totalPurchases = productsInRange.sumOf { parseAmount(it.purchasePrice) }
     val totalExpenses = productsInRange.sumOf { parseAmount(it.expenses) }
 
     return SummaryStats(
+        stock = stockProducts.size,
         totalListed = totalListed,
+        stockCost = stockCost,
+        listedGain = listedGain,
         totalSoldAmount = totalSoldAmount,
         totalPurchases = totalPurchases,
         totalExpenses = totalExpenses,
         net = totalSoldAmount - totalPurchases - totalExpenses,
         vinted = vinted,
         ebay = ebay,
-        etsy = etsy
+        etsy = etsy,
+        facebook = facebook
     )
 }
 
@@ -335,4 +363,10 @@ private fun platformSummary(
     )
 }
 
-private fun formatCurrency(amount: Double): String = String.format(Locale.UK, "\u00A3%.2f", amount)
+private fun com.resell.app.data.PlatformListing.hasSaleRecord(): Boolean =
+    sold || dateSold.isNotBlank() || finalPrice.isNotBlank()
+
+private fun com.resell.app.data.PlatformListing.hasListingRecord(): Boolean =
+    dateListed.isNotBlank() && price.isNotBlank()
+
+private fun formatCurrency(amount: Double): String = String.format(Locale.UK, "\u00A3%.0f", amount)

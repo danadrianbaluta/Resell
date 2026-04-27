@@ -28,6 +28,7 @@ fun ResellApp(repository: ProductRepository) {
     }
 
     LaunchedEffect(repository) {
+        repository.migrateLegacyProducts()
         repository.products.collectLatest { products = it }
     }
 
