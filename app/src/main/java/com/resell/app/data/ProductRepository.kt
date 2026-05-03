@@ -66,7 +66,7 @@ class ProductRepository(private val context: Context) {
                     .normalized()
             } else {
                 current.add(
-                    product.copy(createdAt = product.createdAt.ifBlank { formatDateForDisplay(LocalDate.now()) })
+                    product.copy(createdAt = product.createdAt.ifBlank { formatCreatedAtForDisplay(LocalDateTime.now()) })
                         .normalized()
                 )
             }
@@ -95,7 +95,13 @@ class ProductRepository(private val context: Context) {
             val decoded = decodeProductsOrNull(raw) ?: return@edit
             val normalized = decoded.map { product ->
                 val migratedCreatedAt = product.createdAt.ifBlank {
-                    inferImageDateFromImageUri(product.imageUri) ?: formatDateForDisplay(LocalDate.now())
+                    inferImageTimestampFromImageUri(product.imageUri)
+                        ?.let { timestamp ->
+                            LocalDateTime.ofInstant(java.time.Instant.ofEpochMilli(timestamp), java.time.ZoneId.systemDefault())
+                                .let(::formatCreatedAtForDisplay)
+                        }
+                        ?: inferImageDateFromImageUri(product.imageUri)
+                        ?: formatCreatedAtForDisplay(LocalDateTime.now())
                 }
                 product.copy(createdAt = migratedCreatedAt).normalized()
             }

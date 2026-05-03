@@ -4,6 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.UUID
@@ -99,7 +100,7 @@ fun Product.normalized(): Product {
         (platforms.firstOrNull { it.platform == type } ?: PlatformListing(platform = type)).normalized()
     }
     return copy(
-        createdAt = createdAt.trim().takeIf { it.isNotBlank() }?.let(::formatDateForDisplay).orEmpty(),
+        createdAt = createdAt.trim().takeIf { it.isNotBlank() }?.let(::formatCreatedAtForDisplay).orEmpty(),
         platforms = alignedPlatforms
     )
 }
@@ -129,7 +130,9 @@ fun Product.hasActivityBetween(start: LocalDate, end: LocalDate): Boolean {
 }
 
 private val displayDateFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy")
+private val displayDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm")
 private val legacyIsoDateFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE
+private val legacyIsoDateTimeFormatter: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
 fun formatDateForDisplay(value: String): String {
     val parsed = parseDateOrNull(value) ?: return value
@@ -138,11 +141,54 @@ fun formatDateForDisplay(value: String): String {
 
 fun formatDateForDisplay(date: LocalDate): String = date.format(displayDateFormatter)
 
+fun formatCreatedAtForDisplay(dateTime: LocalDateTime): String = dateTime.format(displayDateTimeFormatter)
+
 fun parseDateOrNull(value: String): LocalDate? {
     val trimmed = value.trim()
     if (trimmed.isBlank()) return null
     return runCatching { LocalDate.parse(trimmed, displayDateFormatter) }.getOrNull()
+        ?: runCatching { LocalDateTime.parse(trimmed, displayDateTimeFormatter).toLocalDate() }.getOrNull()
         ?: runCatching { LocalDate.parse(trimmed, legacyIsoDateFormatter) }.getOrNull()
+        ?: runCatching { LocalDateTime.parse(trimmed, legacyIsoDateTimeFormatter).toLocalDate() }.getOrNull()
+}
+
+fun parseCreatedAtOrNull(value: String): LocalDateTime? {
+    val trimmed = value.trim()
+    if (trimmed.isBlank()) return null
+    return runCatching { LocalDateTime.parse(trimmed, displayDateTimeFormatter) }.getOrNull()
+        ?: runCatching { LocalDate.parse(trimmed, displayDateFormatter).atStartOfDay() }.getOrNull()
+        ?: runCatching { LocalDateTime.parse(trimmed, legacyIsoDateTimeFormatter) }.getOrNull()
+        ?: runCatching { LocalDate.parse(trimmed, legacyIsoDateFormatter).atStartOfDay() }.getOrNull()
+}
+
+private fun hasCreatedAtTime(value: String): Boolean {
+    val trimmed = value.trim()
+    if (trimmed.isBlank()) return false
+    return runCatching { LocalDateTime.parse(trimmed, displayDateTimeFormatter) }.isSuccess ||
+        runCatching { LocalDateTime.parse(trimmed, legacyIsoDateTimeFormatter) }.isSuccess
+}
+
+fun Product.createdAtSortDateTime(): LocalDateTime? {
+    val parsedCreatedAt = parseCreatedAtOrNull(createdAt)
+    if (parsedCreatedAt != null && hasCreatedAtTime(createdAt)) return parsedCreatedAt
+
+    val imageCreatedAt = inferImageTimestampFromImageUri(imageUri)
+        ?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDateTime() }
+
+    return if (
+        parsedCreatedAt != null &&
+        imageCreatedAt != null &&
+        imageCreatedAt.toLocalDate() == parsedCreatedAt.toLocalDate()
+    ) {
+        imageCreatedAt
+    } else {
+        parsedCreatedAt ?: imageCreatedAt
+    }
+}
+
+fun formatCreatedAtForDisplay(value: String): String {
+    val parsed = parseCreatedAtOrNull(value) ?: return value
+    return parsed.format(displayDateTimeFormatter)
 }
 
 fun parseAmount(value: String): Double = value.replace(",", ".").toDoubleOrNull() ?: 0.0

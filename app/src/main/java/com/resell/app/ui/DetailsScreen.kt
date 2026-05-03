@@ -1,6 +1,7 @@
 package com.resell.app.ui
 
 import android.app.Activity
+import android.content.ContentValues
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -12,6 +13,7 @@ import android.provider.MediaStore
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.FileProvider
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -34,6 +36,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.DeleteForever
 import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.PhotoCamera
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -69,13 +72,17 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.resell.app.data.AppScreen
+import com.resell.app.data.formatCreatedAtForDisplay
 import com.resell.app.data.formatDateForDisplay
 import com.resell.app.data.inferImageDateFromImageUri
 import com.resell.app.data.PlatformListing
+import com.resell.app.data.parseCreatedAtOrNull
+import com.resell.app.data.parseDateOrNull
 import com.resell.app.data.Product
 import com.resell.app.data.ProductRepository
 import java.io.File
 import java.time.LocalDate
+import java.time.LocalDateTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -97,7 +104,7 @@ fun DetailsScreen(
 ) {
     val context = LocalContext.current
     val original = remember(existingProduct) {
-        existingProduct ?: Product(createdAt = formatDateForDisplay(LocalDate.now()))
+        existingProduct ?: Product(createdAt = formatCreatedAtForDisplay(LocalDateTime.now()))
     }
     var draft by remember(existingProduct?.id) { mutableStateOf(original) }
     var pendingScreen by remember { mutableStateOf<AppScreen?>(null) }
@@ -105,6 +112,7 @@ fun DetailsScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var celebrationBurst by remember { mutableIntStateOf(0) }
     var showConfetti by remember { mutableStateOf(false) }
+    var pendingCameraPhotoUri by remember { mutableStateOf<Uri?>(null) }
     val hasChanges = draft != original
     val thumbnailDate = remember(draft.imageUri) { inferImageDateFromImageUri(draft.imageUri).orEmpty() }
     val thumbnailPath = remember(draft.imageUri) {
@@ -124,6 +132,16 @@ fun DetailsScreen(
         if (result.resultCode == Activity.RESULT_OK && uri != null) {
             scope.launch {
                 val importedUri = importImageToAppStorage(context, uri, draft.id)
+                if (importedUri != null) draft = draft.copy(imageUri = importedUri)
+            }
+        }
+    }
+    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { captured ->
+        val photoUri = pendingCameraPhotoUri
+        pendingCameraPhotoUri = null
+        if (captured && photoUri != null) {
+            scope.launch {
+                val importedUri = importImageToAppStorage(context, photoUri, draft.id)
                 if (importedUri != null) draft = draft.copy(imageUri = importedUri)
             }
         }
@@ -210,27 +228,47 @@ fun DetailsScreen(
                             horizontalArrangement = Arrangement.spacedBy(14.dp),
                             verticalAlignment = Alignment.Top
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .aspectRatio(1f)
-                                    .clip(RoundedCornerShape(18.dp))
-                                    .background(Color.White)
-                                    .clickable { imagePicker.launch(createImagePickerIntent()) },
-                                contentAlignment = Alignment.Center
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(10.dp)
                             ) {
-                                if (draft.imageUri.isNotBlank()) {
-                                    AsyncImage(
-                                        model = draft.imageUri,
-                                        contentDescription = null,
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                } else {
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                        Icon(Icons.Rounded.Add, contentDescription = null, tint = BrandPurple, modifier = Modifier.size(34.dp))
-                                        Text("Add image", color = BrandPurple, style = MaterialTheme.typography.labelMedium)
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .aspectRatio(1f)
+                                        .clip(RoundedCornerShape(18.dp))
+                                        .background(Color.White)
+                                        .clickable { imagePicker.launch(createImagePickerIntent()) },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (draft.imageUri.isNotBlank()) {
+                                        AsyncImage(
+                                            model = draft.imageUri,
+                                            contentDescription = null,
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } else {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            Icon(Icons.Rounded.Add, contentDescription = null, tint = BrandPurple, modifier = Modifier.size(34.dp))
+                                            Text("Add image", color = BrandPurple, style = MaterialTheme.typography.labelMedium)
+                                        }
                                     }
+                                }
+                                Button(
+                                    onClick = {
+                                        val photoUri = createCameraPhotoUri(context, draft.id)
+                                        if (photoUri != null) {
+                                            pendingCameraPhotoUri = photoUri
+                                            cameraLauncher.launch(photoUri)
+                                        }
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = BrandPurple)
+                                ) {
+                                    Icon(Icons.Rounded.PhotoCamera, contentDescription = null)
+                                    Text("Take photo")
                                 }
                             }
                             Column(
@@ -345,7 +383,14 @@ fun DetailsScreen(
                             value = draft.createdAt,
                             showBorder = true,
                             modifier = Modifier.fillMaxWidth()
-                        ) { draft = draft.copy(createdAt = it) }
+                        ) { selectedDate ->
+                            val createdDate = parseDateOrNull(selectedDate) ?: LocalDate.now()
+                            val createdTime = parseCreatedAtOrNull(draft.createdAt)?.toLocalTime()
+                                ?: LocalDateTime.now().toLocalTime()
+                            draft = draft.copy(
+                                createdAt = formatCreatedAtForDisplay(LocalDateTime.of(createdDate, createdTime))
+                            )
+                        }
                         Text(
                             "Thumbnail date: ${thumbnailDate.ifBlank { "Unavailable" }}",
                             style = MaterialTheme.typography.bodyMedium,
@@ -426,6 +471,26 @@ fun DetailsScreen(
             }
         )
     }
+}
+
+private fun createCameraPhotoUri(context: android.content.Context, productId: String): Uri? {
+    val fileName = "${productId}_${System.currentTimeMillis()}.jpg"
+    return runCatching {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val values = ContentValues().apply {
+                put(MediaStore.Images.Media.DISPLAY_NAME, fileName)
+                put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+                put(MediaStore.Images.Media.RELATIVE_PATH, "${Environment.DIRECTORY_DCIM}/Camera")
+                put(MediaStore.Images.Media.IS_PENDING, 0)
+            }
+            context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+        } else {
+            val cameraDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), "Camera")
+                .apply { mkdirs() }
+            val photoFile = File(cameraDir, fileName)
+            FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", photoFile)
+        }
+    }.getOrNull()
 }
 
 private fun createImagePickerIntent(): Intent {

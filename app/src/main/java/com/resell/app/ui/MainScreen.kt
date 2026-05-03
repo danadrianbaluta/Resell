@@ -58,7 +58,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.resell.app.data.AppScreen
-import com.resell.app.data.parseDateOrNull
+import com.resell.app.data.createdAtSortDateTime
 import com.resell.app.data.Product
 import com.resell.app.data.ProductFilter
 import com.resell.app.data.matchesFilter
@@ -91,9 +91,9 @@ fun MainScreen(
         .filter { it.matchesFilter(filter) }
         .let { visibleProducts ->
             if (sortNewestFirst) {
-                visibleProducts.sortedByDescending { parseDateOrNull(it.createdAt) ?: java.time.LocalDate.MIN }
+                visibleProducts.sortedByDescending { it.createdAtSortDateTime() ?: java.time.LocalDateTime.MIN }
             } else {
-                visibleProducts.sortedBy { parseDateOrNull(it.createdAt) ?: java.time.LocalDate.MIN }
+                visibleProducts.sortedBy { it.createdAtSortDateTime() ?: java.time.LocalDateTime.MIN }
             }
         }
 
