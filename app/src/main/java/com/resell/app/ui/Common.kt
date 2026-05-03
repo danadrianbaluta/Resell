@@ -52,7 +52,7 @@ fun ScreenSelector(
             Icon(Icons.Rounded.ArrowDropDown, contentDescription = null)
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            AppScreen.entries.forEach { screen ->
+            AppScreen.entries.filterNot { it == AppScreen.DETAILS }.forEach { screen ->
                 DropdownMenuItem(
                     text = { Text(screen.label) },
                     onClick = {

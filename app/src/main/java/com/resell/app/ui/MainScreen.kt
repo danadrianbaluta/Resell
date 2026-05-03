@@ -18,12 +18,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsBottomHeight
 import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowDropDown
+import androidx.compose.material.icons.rounded.ArrowDropUp
 import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -33,6 +35,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -42,7 +46,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -60,6 +64,7 @@ import com.resell.app.data.ProductFilter
 import com.resell.app.data.matchesFilter
 import com.resell.app.data.summaryLabel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import java.net.HttpURLConnection
@@ -69,17 +74,28 @@ import java.net.URL
 @Composable
 fun MainScreen(
     products: List<Product>,
+    filter: ProductFilter,
+    onFilterChange: (ProductFilter) -> Unit,
+    sortNewestFirst: Boolean,
+    onSortNewestFirstChange: (Boolean) -> Unit,
+    gridState: LazyGridState,
     onSelectScreen: (AppScreen) -> Unit,
     onAdd: () -> Unit,
     onOpenProduct: (String) -> Unit
 ) {
-    var filter by rememberSaveable { mutableStateOf(ProductFilter.LISTED) }
     var filterExpanded by remember { mutableStateOf(false) }
     var quoteText by remember { mutableStateOf("Loading quote of the day...") }
     var quoteAuthor by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
     val filteredProducts = products
         .filter { it.matchesFilter(filter) }
-        .sortedByDescending { parseDateOrNull(it.createdAt) ?: java.time.LocalDate.MIN }
+        .let { visibleProducts ->
+            if (sortNewestFirst) {
+                visibleProducts.sortedByDescending { parseDateOrNull(it.createdAt) ?: java.time.LocalDate.MIN }
+            } else {
+                visibleProducts.sortedBy { parseDateOrNull(it.createdAt) ?: java.time.LocalDate.MIN }
+            }
+        }
 
     LaunchedEffect(Unit) {
         val quote = fetchQuoteOfTheDay()
@@ -133,6 +149,11 @@ fun MainScreen(
                     Box(modifier = Modifier.weight(1f)) {
                         ScreenSelector(current = AppScreen.MAIN, onSelected = onSelectScreen, modifier = Modifier.fillMaxWidth())
                     }
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                     Box(modifier = Modifier.weight(1f)) {
                         FilledTonalButton(
                             onClick = { filterExpanded = true },
@@ -151,12 +172,31 @@ fun MainScreen(
                                 DropdownMenuItem(
                                     text = { Text(option.label) },
                                     onClick = {
-                                        filter = option
+                                        onFilterChange(option)
                                         filterExpanded = false
+                                        scope.launch { gridState.scrollToItem(0) }
                                     }
                                 )
                             }
                         }
+                    }
+                    IconButton(
+                        onClick = {
+                            onSortNewestFirstChange(!sortNewestFirst)
+                            scope.launch { gridState.scrollToItem(0) }
+                        },
+                        modifier = Modifier.size(40.dp),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = BrandPurple,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(
+                            imageVector = if (sortNewestFirst) Icons.Rounded.ArrowDropUp else Icons.Rounded.ArrowDropDown,
+                            contentDescription = if (sortNewestFirst) "Sort newest to oldest" else "Sort oldest to newest",
+                            modifier = Modifier.size(30.dp)
+                        )
+                    }
                     }
                 }
             }
@@ -186,6 +226,7 @@ fun MainScreen(
             Spacer(modifier = Modifier.height(10.dp))
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
+                state = gridState,
                 modifier = Modifier.fillMaxSize(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)

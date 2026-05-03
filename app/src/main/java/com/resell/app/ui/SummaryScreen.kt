@@ -367,6 +367,6 @@ private fun com.resell.app.data.PlatformListing.hasSaleRecord(): Boolean =
     sold || dateSold.isNotBlank() || finalPrice.isNotBlank()
 
 private fun com.resell.app.data.PlatformListing.hasListingRecord(): Boolean =
-    dateListed.isNotBlank() && price.isNotBlank()
+    dateListed.isNotBlank() || price.isNotBlank()
 
 private fun formatCurrency(amount: Double): String = String.format(Locale.UK, "\u00A3%.0f", amount)

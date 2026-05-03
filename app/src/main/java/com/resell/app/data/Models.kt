@@ -40,10 +40,10 @@ enum class PlatformType(val label: String) {
 }
 
 enum class ProductFilter(val label: String) {
-    LISTED("Listed items"),
-    UNLISTED("Unlisted items"),
-    SOLD("Sold items"),
-    INACTIVE("Inactive items")
+    LISTED("Listed"),
+    UNLISTED("Unlisted"),
+    SOLD("Sold"),
+    INACTIVE("Inactive")
 }
 
 enum class AppScreen(val label: String) {

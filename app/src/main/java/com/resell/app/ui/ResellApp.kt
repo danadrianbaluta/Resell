@@ -1,6 +1,7 @@
 package com.resell.app.ui
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -10,6 +11,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.resell.app.data.AppScreen
 import com.resell.app.data.Product
+import com.resell.app.data.ProductFilter
 import com.resell.app.data.ProductRepository
 import kotlinx.coroutines.flow.collectLatest
 
@@ -19,6 +21,9 @@ fun ResellApp(repository: ProductRepository) {
     var currentScreen by rememberSaveable { mutableStateOf(AppScreen.MAIN) }
     var previousScreen by rememberSaveable { mutableStateOf(AppScreen.MAIN) }
     var selectedProductId by rememberSaveable { mutableStateOf<String?>(null) }
+    var productsFilter by rememberSaveable { mutableStateOf(ProductFilter.LISTED) }
+    var productsSortNewestFirst by rememberSaveable { mutableStateOf(true) }
+    val productsGridState = rememberLazyGridState()
 
     fun navigateTo(screen: AppScreen) {
         if (screen != currentScreen) {
@@ -41,6 +46,11 @@ fun ResellApp(repository: ProductRepository) {
     when (currentScreen) {
         AppScreen.MAIN -> MainScreen(
             products = products,
+            filter = productsFilter,
+            onFilterChange = { productsFilter = it },
+            sortNewestFirst = productsSortNewestFirst,
+            onSortNewestFirstChange = { productsSortNewestFirst = it },
+            gridState = productsGridState,
             onSelectScreen = { screen -> navigateTo(screen) },
             onAdd = {
                 selectedProductId = null

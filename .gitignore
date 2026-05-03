@@ -1,0 +1,72 @@
+# Gradle and Android build output
+.gradle/
+build/
+**/build/
+**/.gradle/
+**/.kotlin/
+**/out/
+**/generated/
+**/intermediates/
+**/outputs/
+**/tmp/
+
+# Keep the Gradle wrapper in source control
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+
+# Local Android/IDE configuration
+local.properties
+.idea/
+*.iml
+*.ipr
+*.iws
+.fleet/
+.vscode/
+
+# Signing keys and local release credentials
+keystore.properties
+*.jks
+*.keystore
+*.p12
+*.pem
+
+# Release and packaged artifacts
+*.apk
+*.aab
+*.ap_
+*.idsig
+*.mapping
+
+# Logs, reports, and crash dumps
+*.log
+*.hprof
+hs_err_pid*
+
+# Kotlin, Java, and native compiled artifacts
+*.class
+*.dex
+*.so
+.cxx/
+externalNativeBuild/
+captures/
+
+# Local Google/Firebase secrets
+google-services.json
+firebase-service-account.json
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# Keep safe examples and project source visible
+!keystore.properties.example
+!app/src/**
+!gradle.properties
+!settings.gradle.kts
+!build.gradle.kts
+!app/build.gradle.kts
+!app/proguard-rules.pro
