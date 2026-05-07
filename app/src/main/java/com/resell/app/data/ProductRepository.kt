@@ -31,6 +31,7 @@ class ProductRepository(private val context: Context) {
     }
 
     private val productsKey = stringPreferencesKey("products")
+    private val expensesKey = stringPreferencesKey("expenses")
     private val autoBackupEnabledKey = booleanPreferencesKey("auto_backup_enabled")
     private val driveFolderUriKey = stringPreferencesKey("drive_folder_uri")
 
@@ -48,6 +49,13 @@ class ProductRepository(private val context: Context) {
             autoBackupEnabled = preferences[autoBackupEnabledKey] ?: false,
             driveFolderUri = preferences[driveFolderUriKey].orEmpty()
         )
+    }
+
+    val expenses: Flow<List<Expense>> = context.dataStore.data.map { preferences ->
+        preferences[expensesKey]
+            ?.let(::decodeExpensesOrNull)
+            .orEmpty()
+            .map(::normalizeStoredExpense)
     }
 
     suspend fun saveProduct(product: Product) {
@@ -84,6 +92,38 @@ class ProductRepository(private val context: Context) {
                 .filterNot { it.id == productId }
 
             preferences[productsKey] = json.encodeToString(current)
+        }
+    }
+
+    suspend fun saveExpense(expense: Expense) {
+        context.dataStore.edit { preferences ->
+            val current = preferences[expensesKey]
+                ?.let(::decodeExpensesOrNull)
+                .orEmpty()
+                .map(::normalizeStoredExpense)
+                .toMutableList()
+
+            val normalized = expense.normalized()
+            val index = current.indexOfFirst { it.id == normalized.id }
+            if (index >= 0) {
+                current[index] = normalized
+            } else {
+                current.add(normalized)
+            }
+
+            preferences[expensesKey] = json.encodeToString(current)
+        }
+    }
+
+    suspend fun deleteExpense(expenseId: String) {
+        context.dataStore.edit { preferences ->
+            val current = preferences[expensesKey]
+                ?.let(::decodeExpensesOrNull)
+                .orEmpty()
+                .map(::normalizeStoredExpense)
+                .filterNot { it.id == expenseId }
+
+            preferences[expensesKey] = json.encodeToString(current)
         }
     }
 
@@ -128,6 +168,14 @@ class ProductRepository(private val context: Context) {
                         imageUriToBackupImage(imageUri)
                     }
                 )
+            },
+            expenses = expenses.first().map { expense ->
+                BackupExpense(
+                    id = expense.id,
+                    amount = expense.amount,
+                    date = expense.date,
+                    comment = expense.comment
+                )
             }
         )
 
@@ -157,9 +205,18 @@ class ProductRepository(private val context: Context) {
                     platforms = backup.platforms.map { it.normalized() }
                 ).normalized()
             }
+            val restoredExpenses = payload.expenses.map { backup ->
+                Expense(
+                    id = backup.id,
+                    amount = backup.amount,
+                    date = backup.date,
+                    comment = backup.comment
+                ).normalized()
+            }
 
             context.dataStore.edit { preferences ->
                 preferences[productsKey] = json.encodeToString(restoredProducts)
+                preferences[expensesKey] = json.encodeToString(restoredExpenses)
             }
         }.isSuccess
     }
@@ -243,8 +300,14 @@ class ProductRepository(private val context: Context) {
     private fun decodeProductsOrNull(raw: String): List<Product>? =
         runCatching { json.decodeFromString<List<Product>>(raw) }.getOrNull()
 
+    private fun decodeExpensesOrNull(raw: String): List<Expense>? =
+        runCatching { json.decodeFromString<List<Expense>>(raw) }.getOrNull()
+
     private fun normalizeStoredProduct(product: Product): Product =
         product.normalized()
+
+    private fun normalizeStoredExpense(expense: Expense): Expense =
+        expense.normalized()
 
     private fun inferTimestampFromFileName(fileName: String): Long? =
         fileName.substringAfterLast('_', "").substringBefore('.').toLongOrNull()

@@ -20,8 +20,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -40,12 +38,10 @@ import androidx.compose.material.icons.rounded.PhotoCamera
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
@@ -93,7 +89,7 @@ import nl.dionsegijn.konfetti.core.Position
 import nl.dionsegijn.konfetti.core.emitter.Emitter
 import java.util.concurrent.TimeUnit
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DetailsScreen(
     existingProduct: Product?,
@@ -223,18 +219,15 @@ fun DetailsScreen(
                             shape = RoundedCornerShape(16.dp),
                             label = { Text("Description") }
                         )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(14.dp),
-                            verticalAlignment = Alignment.Top
-                        ) {
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
+                        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                                verticalAlignment = Alignment.Top
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .fillMaxWidth()
+                                        .weight(1f)
                                         .aspectRatio(1f)
                                         .clip(RoundedCornerShape(18.dp))
                                         .background(Color.White)
@@ -255,6 +248,46 @@ fun DetailsScreen(
                                         }
                                     }
                                 }
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    OutlinedTextField(
+                                        value = draft.purchasePrice,
+                                        onValueChange = { draft = draft.copy(purchasePrice = it) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(16.dp),
+                                        label = { Text("Purchase price") },
+                                        prefix = {
+                                            if (draft.purchasePrice.isNotBlank()) Text("\u00A3")
+                                        },
+                                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                                    )
+                                    OutlinedTextField(
+                                        value = draft.expenses,
+                                        onValueChange = { draft = draft.copy(expenses = it) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(16.dp),
+                                        label = { Text("Expenses") },
+                                        prefix = {
+                                            if (draft.expenses.isNotBlank()) Text("\u00A3")
+                                        },
+                                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                                    )
+                                    OutlinedTextField(
+                                        value = draft.storageLocation,
+                                        onValueChange = { draft = draft.copy(storageLocation = it) },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        shape = RoundedCornerShape(16.dp),
+                                        label = { Text("Storage location") }
+                                    )
+                                }
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(14.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
                                 Button(
                                     onClick = {
                                         val photoUri = createCameraPhotoUri(context, draft.id)
@@ -263,42 +296,20 @@ fun DetailsScreen(
                                             cameraLauncher.launch(photoUri)
                                         }
                                     },
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier.weight(1f),
                                     shape = RoundedCornerShape(14.dp),
                                     colors = ButtonDefaults.buttonColors(containerColor = BrandPurple)
                                 ) {
                                     Icon(Icons.Rounded.PhotoCamera, contentDescription = null)
                                     Text("Take photo")
                                 }
-                            }
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                OutlinedTextField(
-                                    value = draft.purchasePrice,
-                                    onValueChange = { draft = draft.copy(purchasePrice = it) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(16.dp),
-                                    label = { Text("Purchase price") },
-                                    prefix = {
-                                        if (draft.purchasePrice.isNotBlank()) Text("\u00A3")
-                                    },
-                                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal)
-                                )
-                                OutlinedTextField(
-                                    value = draft.expenses,
-                                    onValueChange = { draft = draft.copy(expenses = it) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(16.dp),
-                                    label = { Text("Expenses") },
-                                    prefix = {
-                                        if (draft.expenses.isNotBlank()) Text("\u00A3")
-                                    },
-                                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal)
-                                )
-                                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.End
+                                ) {
                                     Text("Active", color = MutedInk)
+                                    Spacer(modifier = Modifier.size(10.dp))
                                     Switch(
                                         checked = !draft.deleted,
                                         onCheckedChange = { checked -> draft = draft.copy(deleted = !checked) },
@@ -308,46 +319,23 @@ fun DetailsScreen(
                                         )
                                     )
                                 }
-                                OutlinedTextField(
-                                    value = draft.storageLocation,
-                                    onValueChange = { draft = draft.copy(storageLocation = it) },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(16.dp),
-                                    label = { Text("Storage location") }
-                                )
                             }
                         }
                     }
                 }
 
-                SectionCard(modifier = Modifier.fillMaxWidth()) {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        Text("Sales channels", style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            "Once one platform is sold, the others lock to avoid conflicting sale records.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MutedInk
-                        )
-                        val soldPlatform = draft.platforms.firstOrNull { it.sold }?.platform
-                        FlowRow(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            draft.platforms.forEach { listing ->
-                                PlatformSection(
-                                    listing = listing,
-                                    enabled = soldPlatform == null || soldPlatform == listing.platform,
-                                    onMarkedSold = { celebrationBurst++ },
-                                    onListingChange = { updated ->
-                                        draft = draft.copy(platforms = draft.platforms.map {
-                                            if (it.platform == updated.platform) updated else it
-                                        })
-                                    }
-                                )
-                            }
+                val soldPlatform = draft.platforms.firstOrNull { it.sold }?.platform
+                draft.platforms.forEach { listing ->
+                    PlatformSection(
+                        listing = listing,
+                        enabled = soldPlatform == null || soldPlatform == listing.platform,
+                        onMarkedSold = { celebrationBurst++ },
+                        onListingChange = { updated ->
+                            draft = draft.copy(platforms = draft.platforms.map {
+                                if (it.platform == updated.platform) updated else it
+                            })
                         }
-                    }
+                    )
                 }
 
                 SectionCard(modifier = Modifier.fillMaxWidth()) {
@@ -557,29 +545,66 @@ private fun PlatformSection(
     onMarkedSold: () -> Unit,
     onListingChange: (PlatformListing) -> Unit
 ) {
-    OutlinedCard(
+    SectionCard(
         modifier = Modifier
             .fillMaxWidth()
-            .alpha(if (enabled) 1f else 0.45f),
-        shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.outlinedCardColors(containerColor = Color.White)
+            .alpha(if (enabled) 1f else 0.45f)
     ) {
-        Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(listing.platform.label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-            DateField("Date listed", listing.dateListed, enabled = enabled) { onListingChange(listing.copy(dateListed = it)) }
-            OutlinedTextField(
-                value = listing.price,
-                onValueChange = { onListingChange(listing.copy(price = it)) },
-                enabled = enabled,
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                label = { Text("Price") },
-                prefix = {
-                    if (listing.price.isNotBlank()) Text("\u00A3")
-                },
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal)
-            )
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                OutlinedTextField(
+                    value = listing.price,
+                    onValueChange = { onListingChange(listing.copy(price = it)) },
+                    enabled = enabled,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(16.dp),
+                    label = { Text("Price") },
+                    prefix = {
+                        if (listing.price.isNotBlank()) Text("\u00A3")
+                    },
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                )
+                DateField(
+                    label = "Date listed",
+                    value = listing.dateListed,
+                    enabled = enabled,
+                    showBorder = true,
+                    modifier = Modifier.weight(1f)
+                ) { onListingChange(listing.copy(dateListed = it)) }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                OutlinedTextField(
+                    value = listing.finalPrice,
+                    onValueChange = { onListingChange(listing.copy(finalPrice = it)) },
+                    enabled = enabled,
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(16.dp),
+                    label = { Text("Final price") },
+                    prefix = {
+                        if (listing.finalPrice.isNotBlank()) Text("\u00A3")
+                    },
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal)
+                )
+                DateField(
+                    label = "Date sold",
+                    value = listing.dateSold,
+                    enabled = enabled,
+                    showBorder = true,
+                    modifier = Modifier.weight(1f)
+                ) { onListingChange(listing.copy(dateSold = it)) }
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
                 Checkbox(
                     checked = listing.sold,
                     enabled = enabled,
@@ -595,19 +620,6 @@ private fun PlatformSection(
                 )
                 Text("Sold", color = MutedInk)
             }
-            DateField("Date sold", listing.dateSold, enabled = enabled) { onListingChange(listing.copy(dateSold = it)) }
-            OutlinedTextField(
-                value = listing.finalPrice,
-                onValueChange = { onListingChange(listing.copy(finalPrice = it)) },
-                enabled = enabled,
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                label = { Text("Final price") },
-                prefix = {
-                    if (listing.finalPrice.isNotBlank()) Text("\u00A3")
-                },
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Decimal)
-            )
         }
     }
 }

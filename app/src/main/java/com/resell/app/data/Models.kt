@@ -23,6 +23,14 @@ data class Product(
 )
 
 @Serializable
+data class Expense(
+    val id: String = UUID.randomUUID().toString(),
+    val amount: String = "",
+    val date: String = "",
+    val comment: String = ""
+)
+
+@Serializable
 data class PlatformListing(
     val platform: PlatformType,
     val dateListed: String = "",
@@ -50,6 +58,8 @@ enum class ProductFilter(val label: String) {
 enum class AppScreen(val label: String) {
     MAIN("Products"),
     DETAILS("Details"),
+    EXPENSES("Expenses"),
+    EXPENSE_DETAILS("Expense details"),
     SUMMARY("Summary"),
     SETTINGS("Settings")
 }
@@ -58,7 +68,8 @@ enum class AppScreen(val label: String) {
 data class BackupPayload(
     val version: Int = 1,
     val exportedAt: String,
-    val products: List<BackupProduct>
+    val products: List<BackupProduct>,
+    val expenses: List<BackupExpense> = emptyList()
 )
 
 @Serializable
@@ -83,6 +94,14 @@ data class BackupImage(
 )
 
 @Serializable
+data class BackupExpense(
+    val id: String,
+    val amount: String = "",
+    val date: String = "",
+    val comment: String = ""
+)
+
+@Serializable
 data class BackupPreferences(
     val autoBackupEnabled: Boolean = false,
     val driveFolderUri: String = ""
@@ -104,6 +123,12 @@ fun Product.normalized(): Product {
         platforms = alignedPlatforms
     )
 }
+
+fun Expense.normalized(): Expense = copy(
+    amount = amount.trim(),
+    date = formatDateForDisplay(date),
+    comment = comment.trim()
+)
 
 fun PlatformListing.normalized(): PlatformListing = copy(
     dateListed = formatDateForDisplay(dateListed),

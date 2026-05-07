@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.ArrowDropUp
+import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -41,7 +42,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -59,16 +59,17 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.resell.app.data.AppScreen
 import com.resell.app.data.createdAtSortDateTime
+import com.resell.app.data.formatDateForDisplay
+import com.resell.app.data.parseDateOrNull
 import com.resell.app.data.Product
 import com.resell.app.data.ProductFilter
 import com.resell.app.data.matchesFilter
 import com.resell.app.data.summaryLabel
-import kotlinx.coroutines.Dispatchers
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.format.TextStyle
+import java.util.Locale
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import org.json.JSONArray
-import java.net.HttpURLConnection
-import java.net.URL
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,17 +79,33 @@ fun MainScreen(
     onFilterChange: (ProductFilter) -> Unit,
     sortNewestFirst: Boolean,
     onSortNewestFirstChange: (Boolean) -> Unit,
+    startDate: String,
+    onStartDateChange: (String) -> Unit,
+    endDate: String,
+    onEndDateChange: (String) -> Unit,
+    selectedYear: Int,
+    onSelectedYearChange: (Int) -> Unit,
+    selectedMonth: Int,
+    onSelectedMonthChange: (Int) -> Unit,
     gridState: LazyGridState,
     onSelectScreen: (AppScreen) -> Unit,
     onAdd: () -> Unit,
     onOpenProduct: (String) -> Unit
 ) {
     var filterExpanded by remember { mutableStateOf(false) }
-    var quoteText by remember { mutableStateOf("Loading quote of the day...") }
-    var quoteAuthor by remember { mutableStateOf("") }
+    var dateFilterExpanded by remember { mutableStateOf(false) }
+    var yearExpanded by remember { mutableStateOf(false) }
+    var monthExpanded by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val today = remember { LocalDate.now() }
+    val start = parseDateOrNull(startDate) ?: LocalDate.of(2026, 1, 1)
+    val end = parseDateOrNull(endDate) ?: today
+    val years = remember(today.year) { (today.year - 5..today.year + 2).toList().reversed() }
     val filteredProducts = products
         .filter { it.matchesFilter(filter) }
+        .filter { product ->
+            product.createdAtSortDateTime()?.toLocalDate()?.let { !it.isBefore(start) && !it.isAfter(end) } == true
+        }
         .let { visibleProducts ->
             if (sortNewestFirst) {
                 visibleProducts.sortedByDescending { it.createdAtSortDateTime() ?: java.time.LocalDateTime.MIN }
@@ -96,17 +113,6 @@ fun MainScreen(
                 visibleProducts.sortedBy { it.createdAtSortDateTime() ?: java.time.LocalDateTime.MIN }
             }
         }
-
-    LaunchedEffect(Unit) {
-        val quote = fetchQuoteOfTheDay()
-        if (quote != null) {
-            quoteText = quote.first
-            quoteAuthor = quote.second
-        } else {
-            quoteText = "Keep listings, purchases, and sales in one place with fast status visibility."
-            quoteAuthor = ""
-        }
-    }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
@@ -140,7 +146,48 @@ fun MainScreen(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Text("Products", style = MaterialTheme.typography.titleLarge)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "Products",
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                    IconButton(
+                        onClick = { dateFilterExpanded = !dateFilterExpanded },
+                        modifier = Modifier.size(40.dp),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = BrandPurple,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.CalendarMonth,
+                            contentDescription = "Filter by date",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            onSortNewestFirstChange(!sortNewestFirst)
+                            scope.launch { gridState.scrollToItem(0) }
+                        },
+                        modifier = Modifier.size(40.dp),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = BrandPurple,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(
+                            imageVector = if (sortNewestFirst) Icons.Rounded.ArrowDropUp else Icons.Rounded.ArrowDropDown,
+                            contentDescription = if (sortNewestFirst) "Sort newest to oldest" else "Sort oldest to newest",
+                            modifier = Modifier.size(30.dp)
+                        )
+                    }
+                }
                 Text(filter.summaryLabel(filteredProducts.size), style = MaterialTheme.typography.labelMedium, color = MutedInk)
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -180,46 +227,137 @@ fun MainScreen(
                             }
                         }
                     }
-                    IconButton(
-                        onClick = {
-                            onSortNewestFirstChange(!sortNewestFirst)
-                            scope.launch { gridState.scrollToItem(0) }
-                        },
-                        modifier = Modifier.size(40.dp),
-                        colors = IconButtonDefaults.iconButtonColors(
-                            containerColor = BrandPurple,
-                            contentColor = Color.White
-                        )
-                    ) {
-                        Icon(
-                            imageVector = if (sortNewestFirst) Icons.Rounded.ArrowDropUp else Icons.Rounded.ArrowDropDown,
-                            contentDescription = if (sortNewestFirst) "Sort newest to oldest" else "Sort oldest to newest",
-                            modifier = Modifier.size(30.dp)
-                        )
-                    }
                     }
                 }
-            }
-            Spacer(modifier = Modifier.height(10.dp))
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(Color(0xFFAAC2D0), RoundedCornerShape(24.dp))
-                    .padding(16.dp)
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text("Quote of the day", style = MaterialTheme.typography.titleMedium, color = Ink)
-                    Text(
-                        quoteText,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = Ink
-                    )
-                    if (quoteAuthor.isNotBlank()) {
-                        Text(
-                            quoteAuthor,
-                            style = MaterialTheme.typography.labelMedium,
-                            color = Ink
-                        )
+                if (dateFilterExpanded) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            DateField(
+                                "Start date",
+                                startDate,
+                                showBorder = true,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                onStartDateChange(it)
+                                scope.launch { gridState.scrollToItem(0) }
+                            }
+                            DateField(
+                                "End date",
+                                endDate,
+                                showBorder = true,
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                onEndDateChange(it)
+                                scope.launch { gridState.scrollToItem(0) }
+                            }
+                        }
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            Box(modifier = Modifier.weight(1f)) {
+                                FilledTonalButton(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    onClick = { yearExpanded = true },
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = ButtonDefaults.filledTonalButtonColors(
+                                        containerColor = BrandPurple,
+                                        contentColor = Color.White
+                                    )
+                                ) {
+                                    Text(selectedYear.toString())
+                                }
+                                DropdownMenu(expanded = yearExpanded, onDismissRequest = { yearExpanded = false }) {
+                                    years.forEach { year ->
+                                        DropdownMenuItem(
+                                            text = { Text(year.toString()) },
+                                            onClick = {
+                                                onSelectedYearChange(year)
+                                                yearExpanded = false
+                                                val range = YearMonth.of(year, selectedMonth)
+                                                onStartDateChange(formatDateForDisplay(range.atDay(1)))
+                                                onEndDateChange(
+                                                    if (year == today.year && selectedMonth == today.monthValue) {
+                                                        formatDateForDisplay(today)
+                                                    } else {
+                                                        formatDateForDisplay(range.atEndOfMonth())
+                                                    }
+                                                )
+                                                scope.launch { gridState.scrollToItem(0) }
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                            Box(modifier = Modifier.weight(1f)) {
+                                FilledTonalButton(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    onClick = { monthExpanded = true },
+                                    shape = RoundedCornerShape(14.dp),
+                                    colors = ButtonDefaults.filledTonalButtonColors(
+                                        containerColor = BrandPurple,
+                                        contentColor = Color.White
+                                    )
+                                ) {
+                                    Text(
+                                        YearMonth.of(selectedYear, selectedMonth).month.getDisplayName(
+                                            TextStyle.FULL,
+                                            Locale.getDefault()
+                                        ),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                                DropdownMenu(expanded = monthExpanded, onDismissRequest = { monthExpanded = false }) {
+                                    (1..12).forEach { month ->
+                                        DropdownMenuItem(
+                                            text = {
+                                                Text(
+                                                    YearMonth.of(selectedYear, month).month.getDisplayName(
+                                                        TextStyle.FULL,
+                                                        Locale.getDefault()
+                                                    )
+                                                )
+                                            },
+                                            onClick = {
+                                                onSelectedMonthChange(month)
+                                                monthExpanded = false
+                                                val range = YearMonth.of(selectedYear, month)
+                                                onStartDateChange(formatDateForDisplay(range.atDay(1)))
+                                                onEndDateChange(
+                                                    if (selectedYear == today.year && month == today.monthValue) {
+                                                        formatDateForDisplay(today)
+                                                    } else {
+                                                        formatDateForDisplay(range.atEndOfMonth())
+                                                    }
+                                                )
+                                                scope.launch { gridState.scrollToItem(0) }
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                            FilledTonalButton(
+                                modifier = Modifier.weight(1f),
+                                onClick = {
+                                    onSelectedYearChange(today.year)
+                                    onSelectedMonthChange(today.monthValue)
+                                    onStartDateChange(formatDateForDisplay(LocalDate.of(2026, 1, 1)))
+                                    onEndDateChange(formatDateForDisplay(today))
+                                    scope.launch { gridState.scrollToItem(0) }
+                                },
+                                shape = RoundedCornerShape(14.dp),
+                                colors = ButtonDefaults.filledTonalButtonColors(
+                                    containerColor = BrandPurple,
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Text("All time")
+                            }
+                        }
                     }
                 }
             }
@@ -237,23 +375,6 @@ fun MainScreen(
             }
         }
     }
-}
-
-private suspend fun fetchQuoteOfTheDay(): Pair<String, String>? = withContext(Dispatchers.IO) {
-    runCatching {
-        val connection = (URL("https://zenquotes.io/api/today").openConnection() as HttpURLConnection).apply {
-            requestMethod = "GET"
-            connectTimeout = 5000
-            readTimeout = 5000
-        }
-        connection.inputStream.bufferedReader().use { reader ->
-            val response = reader.readText()
-            val item = JSONArray(response).getJSONObject(0)
-            val quote = item.optString("q").trim()
-            val author = item.optString("a").trim()
-            quote to if (author.isBlank()) "" else " - $author"
-        }
-    }.getOrNull()
 }
 
 @Composable

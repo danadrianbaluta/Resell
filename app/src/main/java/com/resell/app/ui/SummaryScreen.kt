@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.resell.app.data.AppScreen
+import com.resell.app.data.Expense
 import com.resell.app.data.formatDateForDisplay
 import com.resell.app.data.PlatformType
 import com.resell.app.data.Product
@@ -67,6 +68,7 @@ private data class SummaryStats(
 @Composable
 fun SummaryScreen(
     products: List<Product>,
+    expenses: List<Expense>,
     onSelectScreen: (AppScreen) -> Unit
 ) {
     val today = remember { LocalDate.now() }
@@ -79,7 +81,7 @@ fun SummaryScreen(
 
     val start = parseDateOrNull(startDate) ?: today.withDayOfMonth(1)
     val end = parseDateOrNull(endDate) ?: today
-    val stats = remember(products, start, end) { calculateStats(products, start, end) }
+    val stats = remember(products, expenses, start, end) { calculateStats(products, expenses, start, end) }
     val years = remember(today.year) { (today.year - 5..today.year + 2).toList().reversed() }
 
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { innerPadding ->
@@ -303,7 +305,12 @@ private fun PlatformSummaryCard(title: String, summary: PlatformSummary, accent:
     }
 }
 
-private fun calculateStats(products: List<Product>, start: LocalDate, end: LocalDate): SummaryStats {
+private fun calculateStats(
+    products: List<Product>,
+    expenses: List<Expense>,
+    start: LocalDate,
+    end: LocalDate
+): SummaryStats {
     val activeProducts = products.filterNot { it.deleted }
     val stockProducts = activeProducts.filter { product -> product.platforms.none { it.hasSaleRecord() } }
 
@@ -327,7 +334,13 @@ private fun calculateStats(products: List<Product>, start: LocalDate, end: Local
     val totalSoldAmount = vinted.soldAmount + ebay.soldAmount + etsy.soldAmount + facebook.soldAmount
     val productsInRange = activeProducts.filter { it.hasActivityBetween(start, end) }
     val totalPurchases = productsInRange.sumOf { parseAmount(it.purchasePrice) }
-    val totalExpenses = productsInRange.sumOf { parseAmount(it.expenses) }
+    val productExpenses = productsInRange.sumOf { parseAmount(it.expenses) }
+    val standaloneExpenses = expenses
+        .filter { expense ->
+            parseDateOrNull(expense.date)?.let { !it.isBefore(start) && !it.isAfter(end) } == true
+        }
+        .sumOf { parseAmount(it.amount) }
+    val totalExpenses = productExpenses + standaloneExpenses
 
     return SummaryStats(
         stock = stockProducts.size,

@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -111,11 +112,17 @@ fun SettingsScreen(
             ) {
                 Text("Settings", style = MaterialTheme.typography.titleLarge)
                 Text(statusMessage, style = MaterialTheme.typography.labelMedium, color = MutedInk)
-                ScreenSelector(
-                    current = AppScreen.SETTINGS,
-                    onSelected = onSelectScreen,
-                    modifier = Modifier.fillMaxWidth(0.45f)
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    ScreenSelector(
+                        current = AppScreen.SETTINGS,
+                        onSelected = onSelectScreen,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Box(modifier = Modifier.weight(1f))
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
