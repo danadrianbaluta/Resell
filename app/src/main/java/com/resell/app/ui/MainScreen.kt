@@ -27,8 +27,10 @@ import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.ArrowDropUp
 import androidx.compose.material.icons.rounded.CalendarMonth
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Image
 import androidx.compose.material.icons.rounded.Inventory2
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -40,6 +42,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.ButtonDefaults
@@ -98,6 +101,8 @@ fun MainScreen(
 ) {
     var filterExpanded by remember { mutableStateOf(false) }
     var dateFilterExpanded by remember { mutableStateOf(false) }
+    var searchExpanded by remember { mutableStateOf(false) }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
     var storageFilterExpanded by remember { mutableStateOf(false) }
     var selectedStorageLocation by rememberSaveable { mutableStateOf<String?>(null) }
     var yearExpanded by remember { mutableStateOf(false) }
@@ -125,6 +130,11 @@ fun MainScreen(
                 NoStorageFilter -> product.storageLocation.isBlank()
                 else -> product.storageLocation.trim() == selectedStorageLocation
             }
+        }
+        .filter { product ->
+            searchQuery.trim().takeIf { it.isNotBlank() }?.let { query ->
+                product.description.contains(query, ignoreCase = true)
+            } ?: true
         }
         .let { visibleProducts ->
             if (sortNewestFirst) {
@@ -254,8 +264,46 @@ fun MainScreen(
                             modifier = Modifier.size(30.dp)
                         )
                     }
+                    IconButton(
+                        onClick = { searchExpanded = !searchExpanded },
+                        modifier = Modifier.size(40.dp),
+                        colors = IconButtonDefaults.iconButtonColors(
+                            containerColor = if (searchQuery.isBlank()) BrandPurple else BrandOrange,
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Rounded.Search,
+                            contentDescription = "Search products",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
                 Text(filter.summaryLabel(filteredProducts.size), style = MaterialTheme.typography.labelMedium, color = MutedInk)
+                if (searchExpanded) {
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = {
+                            searchQuery = it
+                            scope.launch { gridState.scrollToItem(0) }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Search by name") },
+                        singleLine = true,
+                        trailingIcon = {
+                            if (searchQuery.isNotBlank()) {
+                                IconButton(
+                                    onClick = {
+                                        searchQuery = ""
+                                        scope.launch { gridState.scrollToItem(0) }
+                                    }
+                                ) {
+                                    Icon(Icons.Rounded.Close, contentDescription = "Clear search")
+                                }
+                            }
+                        }
+                    )
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)

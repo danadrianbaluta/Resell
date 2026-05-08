@@ -270,7 +270,7 @@ private fun TotalSummaryCard(stats: SummaryStats) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                TotalItem("Sold", stats.totalSoldProducts.toString(), BrandPurple)
+                TotalItem("Sold", formatCurrency(stats.totalSoldAmount), BrandPurple)
                 TotalItem("Purchases", formatCurrency(stats.totalPurchases), BrandPurple)
                 TotalItem("Expenses", formatCurrency(stats.totalExpenses), BrandPurple)
                 TotalItem("Net", formatCurrency(stats.net), BrandPurple)
