@@ -28,6 +28,7 @@ import androidx.compose.material.icons.rounded.ArrowDropDown
 import androidx.compose.material.icons.rounded.ArrowDropUp
 import androidx.compose.material.icons.rounded.CalendarMonth
 import androidx.compose.material.icons.rounded.Image
+import androidx.compose.material.icons.rounded.Inventory2
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
@@ -47,6 +48,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,6 +73,8 @@ import java.time.format.TextStyle
 import java.util.Locale
 import kotlinx.coroutines.launch
 
+private const val NoStorageFilter = "__NO_STORAGE__"
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
@@ -94,6 +98,8 @@ fun MainScreen(
 ) {
     var filterExpanded by remember { mutableStateOf(false) }
     var dateFilterExpanded by remember { mutableStateOf(false) }
+    var storageFilterExpanded by remember { mutableStateOf(false) }
+    var selectedStorageLocation by rememberSaveable { mutableStateOf<String?>(null) }
     var yearExpanded by remember { mutableStateOf(false) }
     var monthExpanded by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -101,10 +107,24 @@ fun MainScreen(
     val start = parseDateOrNull(startDate) ?: LocalDate.of(2026, 1, 1)
     val end = parseDateOrNull(endDate) ?: today
     val years = remember(today.year) { (today.year - 5..today.year + 2).toList().reversed() }
+    val storageLocations = remember(products) {
+        products
+            .map { it.storageLocation.trim() }
+            .filter { it.isNotBlank() }
+            .distinct()
+            .sortedWith(String.CASE_INSENSITIVE_ORDER)
+    }
     val filteredProducts = products
         .filter { it.matchesFilter(filter) }
         .filter { product ->
-            product.createdAtSortDateTime()?.toLocalDate()?.let { !it.isBefore(start) && !it.isAfter(end) } == true
+            product.matchesDateFilter(filter, start, end)
+        }
+        .filter { product ->
+            when (selectedStorageLocation) {
+                null -> true
+                NoStorageFilter -> product.storageLocation.isBlank()
+                else -> product.storageLocation.trim() == selectedStorageLocation
+            }
         }
         .let { visibleProducts ->
             if (sortNewestFirst) {
@@ -169,6 +189,53 @@ fun MainScreen(
                             contentDescription = "Filter by date",
                             modifier = Modifier.size(24.dp)
                         )
+                    }
+                    Box {
+                        IconButton(
+                            onClick = { storageFilterExpanded = true },
+                            modifier = Modifier.size(40.dp),
+                            colors = IconButtonDefaults.iconButtonColors(
+                                containerColor = if (selectedStorageLocation == null) BrandPurple else BrandOrange,
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.Inventory2,
+                                contentDescription = "Filter by storage",
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = storageFilterExpanded,
+                            onDismissRequest = { storageFilterExpanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("All storage") },
+                                onClick = {
+                                    selectedStorageLocation = null
+                                    storageFilterExpanded = false
+                                    scope.launch { gridState.scrollToItem(0) }
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("No Storage") },
+                                onClick = {
+                                    selectedStorageLocation = NoStorageFilter
+                                    storageFilterExpanded = false
+                                    scope.launch { gridState.scrollToItem(0) }
+                                }
+                            )
+                            storageLocations.forEach { location ->
+                                DropdownMenuItem(
+                                    text = { Text(location) },
+                                    onClick = {
+                                        selectedStorageLocation = location
+                                        storageFilterExpanded = false
+                                        scope.launch { gridState.scrollToItem(0) }
+                                    }
+                                )
+                            }
+                        }
                     }
                     IconButton(
                         onClick = {
@@ -375,6 +442,22 @@ fun MainScreen(
             }
         }
     }
+}
+
+private fun Product.matchesDateFilter(filter: ProductFilter, start: LocalDate, end: LocalDate): Boolean {
+    if (filter == ProductFilter.LISTED) {
+        return platforms.any { listing ->
+            parseDateOrNull(listing.dateListed)?.let { !it.isBefore(start) && !it.isAfter(end) } == true
+        }
+    }
+
+    if (filter == ProductFilter.SOLD) {
+        return platforms.any { listing ->
+            parseDateOrNull(listing.dateSold)?.let { !it.isBefore(start) && !it.isAfter(end) } == true
+        }
+    }
+
+    return createdAtSortDateTime()?.toLocalDate()?.let { !it.isBefore(start) && !it.isAfter(end) } == true
 }
 
 @Composable

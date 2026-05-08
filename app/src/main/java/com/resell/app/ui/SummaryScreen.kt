@@ -36,8 +36,8 @@ import com.resell.app.data.Expense
 import com.resell.app.data.formatDateForDisplay
 import com.resell.app.data.PlatformType
 import com.resell.app.data.Product
-import com.resell.app.data.hasActivityBetween
 import com.resell.app.data.parseAmount
+import com.resell.app.data.parseCreatedAtOrNull
 import com.resell.app.data.parseDateOrNull
 import java.time.LocalDate
 import java.time.YearMonth
@@ -54,6 +54,7 @@ private data class SummaryStats(
     val totalListed: Int,
     val stockCost: Double,
     val listedGain: Double,
+    val totalSoldProducts: Int,
     val totalSoldAmount: Double,
     val totalPurchases: Double,
     val totalExpenses: Double,
@@ -246,7 +247,7 @@ fun SummaryScreen(
 private fun InventorySummaryCard(stats: SummaryStats) {
     SectionCard(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Inventory", style = MaterialTheme.typography.labelLarge, color = Ink)
+            Text("Current Inventory", style = MaterialTheme.typography.labelLarge, color = Ink)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -254,7 +255,7 @@ private fun InventorySummaryCard(stats: SummaryStats) {
                 TotalItem("Stock", stats.stock.toString(), Ink)
                 TotalItem("Listed", stats.totalListed.toString(), Ink)
                 TotalItem("Cost", formatCurrency(stats.stockCost), Ink)
-                TotalItem("Gain", formatCurrency(stats.listedGain), Ink)
+                TotalItem("Future Gain", formatCurrency(stats.listedGain), Ink)
             }
         }
     }
@@ -269,7 +270,7 @@ private fun TotalSummaryCard(stats: SummaryStats) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                TotalItem("Sold", formatCurrency(stats.totalSoldAmount), BrandPurple)
+                TotalItem("Sold", stats.totalSoldProducts.toString(), BrandPurple)
                 TotalItem("Purchases", formatCurrency(stats.totalPurchases), BrandPurple)
                 TotalItem("Expenses", formatCurrency(stats.totalExpenses), BrandPurple)
                 TotalItem("Net", formatCurrency(stats.net), BrandPurple)
@@ -331,10 +332,14 @@ private fun calculateStats(
     val etsy = platformSummary(activeProducts, PlatformType.ETSY, start, end)
     val facebook = platformSummary(activeProducts, PlatformType.FACEBOOK, start, end)
 
+    val totalSoldProducts = vinted.products + ebay.products + etsy.products + facebook.products
     val totalSoldAmount = vinted.soldAmount + ebay.soldAmount + etsy.soldAmount + facebook.soldAmount
-    val productsInRange = activeProducts.filter { it.hasActivityBetween(start, end) }
-    val totalPurchases = productsInRange.sumOf { parseAmount(it.purchasePrice) }
-    val productExpenses = productsInRange.sumOf { parseAmount(it.expenses) }
+    val purchasedProductsInRange = activeProducts.filter { product ->
+        parseCreatedAtOrNull(product.createdAt)?.toLocalDate()?.isBetweenInclusive(start, end) == true
+    }
+    val soldProductsInRange = activeProducts.filter { product -> product.isSoldBetween(start, end) }
+    val totalPurchases = purchasedProductsInRange.sumOf { parseAmount(it.purchasePrice) }
+    val productExpenses = soldProductsInRange.sumOf { parseAmount(it.expenses) }
     val standaloneExpenses = expenses
         .filter { expense ->
             parseDateOrNull(expense.date)?.let { !it.isBefore(start) && !it.isAfter(end) } == true
@@ -347,6 +352,7 @@ private fun calculateStats(
         totalListed = totalListed,
         stockCost = stockCost,
         listedGain = listedGain,
+        totalSoldProducts = totalSoldProducts,
         totalSoldAmount = totalSoldAmount,
         totalPurchases = totalPurchases,
         totalExpenses = totalExpenses,
@@ -365,9 +371,9 @@ private fun platformSummary(
     end: LocalDate
 ): PlatformSummary {
     val sales = products
-        .flatMap { it.platforms.filter { listing -> listing.platform == platform && listing.sold } }
+        .flatMap { it.platforms.filter { listing -> listing.platform == platform && listing.hasSaleRecord() } }
         .filter { listing ->
-            parseDateOrNull(listing.dateSold)?.let { !it.isBefore(start) && !it.isAfter(end) } == true
+            parseDateOrNull(listing.dateSold)?.isBetweenInclusive(start, end) == true
         }
 
     return PlatformSummary(
@@ -381,5 +387,14 @@ private fun com.resell.app.data.PlatformListing.hasSaleRecord(): Boolean =
 
 private fun com.resell.app.data.PlatformListing.hasListingRecord(): Boolean =
     dateListed.isNotBlank() || price.isNotBlank()
+
+private fun Product.isSoldBetween(start: LocalDate, end: LocalDate): Boolean {
+    return platforms.any { listing ->
+        listing.hasSaleRecord() && parseDateOrNull(listing.dateSold)?.isBetweenInclusive(start, end) == true
+    }
+}
+
+private fun LocalDate.isBetweenInclusive(start: LocalDate, end: LocalDate): Boolean =
+    !isBefore(start) && !isAfter(end)
 
 private fun formatCurrency(amount: Double): String = String.format(Locale.UK, "\u00A3%.0f", amount)
