@@ -225,29 +225,6 @@ fun DetailsScreen(
                                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                                 verticalAlignment = Alignment.Top
                             ) {
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .aspectRatio(1f)
-                                        .clip(RoundedCornerShape(18.dp))
-                                        .background(Color.White)
-                                        .clickable { imagePicker.launch(createImagePickerIntent()) },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    if (draft.imageUri.isNotBlank()) {
-                                        AsyncImage(
-                                            model = draft.imageUri,
-                                            contentDescription = null,
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentScale = ContentScale.Crop
-                                        )
-                                    } else {
-                                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                            Icon(Icons.Rounded.Add, contentDescription = null, tint = BrandPurple, modifier = Modifier.size(34.dp))
-                                            Text("Add image", color = BrandPurple, style = MaterialTheme.typography.labelMedium)
-                                        }
-                                    }
-                                }
                                 Column(
                                     modifier = Modifier.weight(1f),
                                     verticalArrangement = Arrangement.spacedBy(10.dp)
@@ -282,12 +259,51 @@ fun DetailsScreen(
                                         label = { Text("Storage location") }
                                     )
                                 }
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .aspectRatio(1f)
+                                        .clip(RoundedCornerShape(18.dp))
+                                        .background(Color.White)
+                                        .clickable { imagePicker.launch(createImagePickerIntent()) },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    if (draft.imageUri.isNotBlank()) {
+                                        AsyncImage(
+                                            model = draft.imageUri,
+                                            contentDescription = null,
+                                            modifier = Modifier.fillMaxSize(),
+                                            contentScale = ContentScale.Crop
+                                        )
+                                    } else {
+                                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            Icon(Icons.Rounded.Add, contentDescription = null, tint = BrandPurple, modifier = Modifier.size(34.dp))
+                                            Text("Add image", color = BrandPurple, style = MaterialTheme.typography.labelMedium)
+                                        }
+                                    }
+                                }
                             }
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.spacedBy(14.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                Row(
+                                    modifier = Modifier.weight(1f),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Start
+                                ) {
+                                    Text("Active", color = MutedInk)
+                                    Spacer(modifier = Modifier.size(10.dp))
+                                    Switch(
+                                        checked = !draft.deleted,
+                                        onCheckedChange = { checked -> draft = draft.copy(deleted = !checked) },
+                                        colors = SwitchDefaults.colors(
+                                            checkedThumbColor = Color.White,
+                                            checkedTrackColor = BrandPurple
+                                        )
+                                    )
+                                }
                                 Button(
                                     onClick = {
                                         val photoUri = createCameraPhotoUri(context, draft.id)
@@ -302,22 +318,6 @@ fun DetailsScreen(
                                 ) {
                                     Icon(Icons.Rounded.PhotoCamera, contentDescription = null)
                                     Text("Take photo")
-                                }
-                                Row(
-                                    modifier = Modifier.weight(1f),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.End
-                                ) {
-                                    Text("Active", color = MutedInk)
-                                    Spacer(modifier = Modifier.size(10.dp))
-                                    Switch(
-                                        checked = !draft.deleted,
-                                        onCheckedChange = { checked -> draft = draft.copy(deleted = !checked) },
-                                        colors = SwitchDefaults.colors(
-                                            checkedThumbColor = Color.White,
-                                            checkedTrackColor = BrandPurple
-                                        )
-                                    )
                                 }
                             }
                         }

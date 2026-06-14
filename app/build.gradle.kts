@@ -23,8 +23,8 @@ android {
         applicationId = "com.resell.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 14
-        versionName = "2.3"
+        versionCode = 16
+        versionName = "2.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

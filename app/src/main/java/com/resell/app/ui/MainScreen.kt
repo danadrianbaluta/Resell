@@ -137,7 +137,13 @@ fun MainScreen(
             } ?: true
         }
         .let { visibleProducts ->
-            if (sortNewestFirst) {
+            if (filter == ProductFilter.SOLD) {
+                visibleProducts.sortedByDescending { product ->
+                    product.platforms
+                        .mapNotNull { listing -> parseDateOrNull(listing.dateSold) }
+                        .maxOrNull() ?: LocalDate.MIN
+                }
+            } else if (sortNewestFirst) {
                 visibleProducts.sortedByDescending { it.createdAtSortDateTime() ?: java.time.LocalDateTime.MIN }
             } else {
                 visibleProducts.sortedBy { it.createdAtSortDateTime() ?: java.time.LocalDateTime.MIN }
