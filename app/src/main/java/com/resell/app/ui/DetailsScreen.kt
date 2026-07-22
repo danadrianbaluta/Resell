@@ -150,6 +150,11 @@ fun DetailsScreen(
         }
     }
 
+    fun discardAndThen(after: () -> Unit) {
+        draft = original
+        after()
+    }
+
     BackHandler(enabled = hasChanges) {
         pendingScreen = AppScreen.MAIN
         showUnsavedDialog = true
@@ -434,7 +439,9 @@ fun DetailsScreen(
                     val next = pendingScreen
                     pendingScreen = null
                     showUnsavedDialog = false
-                    if (next != null) onSelectScreen(next)
+                    discardAndThen {
+                        if (next != null) onSelectScreen(next)
+                    }
                 }) { Text("No") }
             }
         )

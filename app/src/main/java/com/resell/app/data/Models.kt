@@ -52,7 +52,8 @@ enum class ProductFilter(val label: String) {
     LISTED("Listed"),
     UNLISTED("Unlisted"),
     SOLD("Sold"),
-    INACTIVE("Inactive")
+    INACTIVE("Inactive"),
+    ALL("All")
 }
 
 enum class AppScreen(val label: String) {
@@ -108,6 +109,7 @@ data class BackupPreferences(
 )
 
 fun ProductFilter.summaryLabel(count: Int): String = when (this) {
+    ProductFilter.ALL -> "$count total"
     ProductFilter.LISTED -> "$count listed"
     ProductFilter.UNLISTED -> "$count unlisted"
     ProductFilter.SOLD -> "$count sold"
@@ -140,6 +142,7 @@ fun Product.matchesFilter(filter: ProductFilter): Boolean {
     val hasListings = normalized.platforms.any { it.dateListed.isNotBlank() || it.price.isNotBlank() }
     val hasSales = normalized.platforms.any { it.sold || it.dateSold.isNotBlank() || it.finalPrice.isNotBlank() }
     return when (filter) {
+        ProductFilter.ALL -> true
         ProductFilter.LISTED -> !deleted && hasListings && !hasSales
         ProductFilter.UNLISTED -> !deleted && !hasListings && !hasSales
         ProductFilter.SOLD -> !deleted && hasSales

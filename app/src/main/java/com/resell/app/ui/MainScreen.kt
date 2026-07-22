@@ -499,6 +499,8 @@ fun MainScreen(
 }
 
 private fun Product.matchesDateFilter(filter: ProductFilter, start: LocalDate, end: LocalDate): Boolean {
+    if (filter == ProductFilter.ALL) return true
+
     if (filter == ProductFilter.LISTED) {
         return platforms.any { listing ->
             parseDateOrNull(listing.dateListed)?.let { !it.isBefore(start) && !it.isAfter(end) } == true
