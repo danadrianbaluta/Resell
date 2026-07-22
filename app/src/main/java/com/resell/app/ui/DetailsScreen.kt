@@ -155,9 +155,13 @@ fun DetailsScreen(
         after()
     }
 
-    BackHandler(enabled = hasChanges) {
-        pendingScreen = AppScreen.MAIN
-        showUnsavedDialog = true
+    BackHandler(enabled = true) {
+        if (hasChanges) {
+            pendingScreen = AppScreen.MAIN
+            showUnsavedDialog = true
+        } else {
+            onSelectScreen(AppScreen.MAIN)
+        }
     }
 
     Scaffold(containerColor = MaterialTheme.colorScheme.background) { innerPadding ->
