@@ -86,6 +86,11 @@ fun ResellApp(repository: ProductRepository) {
 
         AppScreen.DETAILS -> DetailsScreen(
             existingProduct = products.firstOrNull { it.id == selectedProductId },
+            categoryOptions = products
+                .map { it.category.trim() }
+                .filter { it.isNotBlank() }
+                .distinctBy { it.lowercase() }
+                .sortedWith(String.CASE_INSENSITIVE_ORDER),
             repository = repository,
             onAfterSave = { product ->
                 selectedProductId = product.id

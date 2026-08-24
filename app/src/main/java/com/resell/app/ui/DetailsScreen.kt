@@ -39,7 +39,10 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -93,6 +96,7 @@ import java.util.concurrent.TimeUnit
 @Composable
 fun DetailsScreen(
     existingProduct: Product?,
+    categoryOptions: List<String>,
     repository: ProductRepository,
     onAfterSave: (Product) -> Unit,
     onAfterDelete: () -> Unit,
@@ -104,8 +108,10 @@ fun DetailsScreen(
     }
     var draft by remember(existingProduct?.id) { mutableStateOf(original) }
     var pendingScreen by remember { mutableStateOf<AppScreen?>(null) }
+    var pendingSaveAfter by remember { mutableStateOf<(() -> Unit)?>(null) }
     var showUnsavedDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
+    var showNewCategoryDialog by remember { mutableStateOf(false) }
     var celebrationBurst by remember { mutableIntStateOf(0) }
     var showConfetti by remember { mutableStateOf(false) }
     var pendingCameraPhotoUri by remember { mutableStateOf<Uri?>(null) }
@@ -143,10 +149,24 @@ fun DetailsScreen(
         }
     }
 
-    fun saveAndThen(after: () -> Unit) {
+    fun isNewCategory(): Boolean {
+        val category = draft.category.trim()
+        return category.isNotBlank() && categoryOptions.none { it.equals(category, ignoreCase = true) }
+    }
+
+    fun saveConfirmedAndThen(after: () -> Unit) {
         scope.launch {
-            repository.saveProduct(draft)
+            repository.saveProduct(draft.copy(category = draft.category.trim()))
             after()
+        }
+    }
+
+    fun saveAndThen(after: () -> Unit) {
+        if (isNewCategory()) {
+            pendingSaveAfter = after
+            showNewCategoryDialog = true
+        } else {
+            saveConfirmedAndThen(after)
         }
     }
 
@@ -228,6 +248,24 @@ fun DetailsScreen(
                             shape = RoundedCornerShape(16.dp),
                             label = { Text("Description") }
                         )
+                    }
+                }
+
+                SectionCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        Text("Category", style = MaterialTheme.typography.titleMedium)
+                        CategoryField(
+                            value = draft.category,
+                            options = categoryOptions,
+                            onValueChange = { draft = draft.copy(category = it) },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+
+                SectionCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                        Text("Details", style = MaterialTheme.typography.titleMedium)
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
@@ -430,10 +468,10 @@ fun DetailsScreen(
             text = { Text("You have unsaved changes. Do you want to save before leaving this page?") },
             confirmButton = {
                 TextButton(onClick = {
+                    showUnsavedDialog = false
                     saveAndThen {
                         val next = pendingScreen
                         pendingScreen = null
-                        showUnsavedDialog = false
                         if (next == null || next == AppScreen.MAIN) onAfterSave(draft) else onSelectScreen(next)
                     }
                 }) { Text("Yes") }
@@ -446,6 +484,32 @@ fun DetailsScreen(
                     discardAndThen {
                         if (next != null) onSelectScreen(next)
                     }
+                }) { Text("No") }
+            }
+        )
+    }
+
+    if (showNewCategoryDialog) {
+        val category = draft.category.trim()
+        AlertDialog(
+            onDismissRequest = {
+                pendingSaveAfter = null
+                showNewCategoryDialog = false
+            },
+            title = { Text("New category?") },
+            text = { Text("Add \"$category\" to the category list?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    val after = pendingSaveAfter
+                    pendingSaveAfter = null
+                    showNewCategoryDialog = false
+                    saveConfirmedAndThen { after?.invoke() }
+                }) { Text("Yes") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    pendingSaveAfter = null
+                    showNewCategoryDialog = false
                 }) { Text("No") }
             }
         )
@@ -547,6 +611,62 @@ private fun calculateInSampleSize(width: Int, height: Int, reqWidth: Int, reqHei
         }
     }
     return inSampleSize.coerceAtLeast(1)
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CategoryField(
+    value: String,
+    options: List<String>,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val filteredOptions = remember(value, options) {
+        val query = value.trim()
+        if (query.isBlank()) {
+            options
+        } else {
+            options.filter { it.contains(query, ignoreCase = true) }
+        }
+    }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded && filteredOptions.isNotEmpty(),
+        onExpandedChange = { expanded = it },
+        modifier = modifier
+    ) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = {
+                onValueChange(it)
+                expanded = true
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor(),
+            shape = RoundedCornerShape(16.dp),
+            label = { Text("Category") },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded && filteredOptions.isNotEmpty())
+            },
+            singleLine = true
+        )
+        ExposedDropdownMenu(
+            expanded = expanded && filteredOptions.isNotEmpty(),
+            onDismissRequest = { expanded = false }
+        ) {
+            filteredOptions.forEach { category ->
+                DropdownMenuItem(
+                    text = { Text(category) },
+                    onClick = {
+                        onValueChange(category)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
 }
 
 @Composable

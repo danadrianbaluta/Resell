@@ -14,6 +14,7 @@ data class Product(
     val id: String = UUID.randomUUID().toString(),
     val createdAt: String = "",
     val description: String = "",
+    val category: String = "",
     val purchasePrice: String = "",
     val imageUri: String = "",
     val storageLocation: String = "",
@@ -78,6 +79,7 @@ data class BackupProduct(
     val id: String,
     val createdAt: String = "",
     val description: String,
+    val category: String = "",
     val purchasePrice: String,
     val storageLocation: String = "",
     val expenses: String,
@@ -122,6 +124,7 @@ fun Product.normalized(): Product {
     }
     return copy(
         createdAt = createdAt.trim().takeIf { it.isNotBlank() }?.let(::formatCreatedAtForDisplay).orEmpty(),
+        category = category.trim(),
         platforms = alignedPlatforms
     )
 }
